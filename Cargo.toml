@@ -7,3 +7,5 @@ license = "MIT"
 license-file = "LICENSE"
 
 [dependencies]
+clap = { version = "4.5.41", features = ["derive"] }
+reqwest = "0.12.22"
