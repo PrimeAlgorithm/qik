@@ -1,18 +1,48 @@
-use clap::Subcommand;
+use clap::{Args, Subcommand};
+use reqwest::header::{HeaderName, HeaderValue};
+
+use crate::commands::parsers::header::parse_header;
+
+#[derive(Args)]
+pub struct CommonHttpArgs {
+    #[arg(long, value_parser = parse_header)]
+    pub header: Option<Vec<(HeaderName, HeaderValue)>>,
+}
 
 #[derive(Subcommand)]
 pub enum HttpCommands {
-    Get {},
+    Get {
+        #[command(flatten)]
+        common: CommonHttpArgs,
+    },
 
-    Post {},
+    Post {
+        #[command(flatten)]
+        common: CommonHttpArgs,
+    },
 
-    Put {},
+    Put {
+        #[command(flatten)]
+        common: CommonHttpArgs,
+    },
 
-    Delete {},
+    Delete {
+        #[command(flatten)]
+        common: CommonHttpArgs,
+    },
 
-    Patch {},
+    Patch {
+        #[command(flatten)]
+        common: CommonHttpArgs,
+    },
 
-    Head {},
+    Head {
+        #[command(flatten)]
+        common: CommonHttpArgs,
+    },
 
-    Options {},
+    Options {
+        #[command(flatten)]
+        common: CommonHttpArgs,
+    },
 }

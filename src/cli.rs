@@ -1,5 +1,6 @@
 use crate::{commands::http::HttpCommands, handlers::http::execute_http_command};
 use clap::{Parser, Subcommand};
+use reqwest::Client;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -16,10 +17,10 @@ pub enum Commands {
     },
 }
 
-pub fn execute_cmd(cli: &Cli) {
+pub async fn execute_cmd(cli: &Cli, http_client: &Client) {
     println!("Executing top level command.");
 
     match &cli.commands {
-        Commands::Http { http_command } => execute_http_command(http_command),
+        Commands::Http { http_command } => execute_http_command(http_command, http_client).await,
     }
 }

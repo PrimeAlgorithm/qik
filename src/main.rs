@@ -6,7 +6,10 @@ use crate::cli::execute_cmd;
 use clap::Parser;
 use cli::Cli;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let cli = Cli::parse();
-    execute_cmd(&cli);
+    let client = reqwest::Client::new();
+
+    execute_cmd(&cli, &client).await;
 }
