@@ -25,7 +25,7 @@ async fn execute_helper(client: &Client, req_method: Method, common: &CommonHttp
         client,
         RequestInformation {
             method: req_method,
-            headers: common.header.clone(),
+            common: common
         },
     )
     .await

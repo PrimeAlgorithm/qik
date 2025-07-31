@@ -6,7 +6,7 @@ use crate::commands::parsers::header::parse_header;
 #[derive(Args)]
 pub struct CommonHttpArgs {
     #[arg(long, value_parser = parse_header)]
-    pub header: Option<Vec<(HeaderName, HeaderValue)>>,
+    pub headers: Option<Vec<(HeaderName, HeaderValue)>>,
 }
 
 #[derive(Subcommand)]
