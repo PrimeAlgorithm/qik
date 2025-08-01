@@ -1,6 +1,7 @@
 mod cli;
 mod commands;
 mod handlers;
+mod models;
 
 use crate::cli::execute_cmd;
 use clap::Parser;
