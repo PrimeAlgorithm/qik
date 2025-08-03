@@ -22,14 +22,22 @@ pub async fn execute(
     client: &Client,
     req_info: RequestInformation<'_>,
 ) -> Result<Transaction, anyhow::Error> {
-    let mut request = client.request(req_info.method.clone(), req_info.common.url.clone());
+    let mut url = req_info.common.url.clone();
+
+    // If the user has added params, create a new URL with it.
+    if let Some(params) = &req_info.common.param {
+        url.query_pairs_mut().extend_pairs(params.iter());
+    }
+
+    // Setup the request.
+    let mut request = client.request(req_info.method.clone(), url.clone());
     let http_version = Version::HTTP_11;
     request = request.version(http_version);
 
     let mut content_type_header_set = false;
     let mut request_headers = HeaderMap::new();
 
-    if let Some(headers) = &req_info.common.headers {
+    if let Some(headers) = &req_info.common.header {
         for (key, value) in headers {
             if key.as_str().eq_ignore_ascii_case("content-type") {
                 content_type_header_set = true;
@@ -78,7 +86,7 @@ pub async fn execute(
         RequestSpec {
             method: req_info.method,
             version: http_version,
-            url: req_info.common.url.clone(),
+            url: url.clone(),
             headers: request_headers,
             body: request_body,
         },

@@ -2,7 +2,7 @@ use clap::{ArgGroup, Args, Subcommand};
 use reqwest::header::{HeaderName, HeaderValue};
 use url::Url;
 
-use crate::commands::parsers::{header::parse_header, json::parse_json};
+use crate::commands::parsers::{header::parse_header, json::parse_json, param::parse_param};
 
 #[derive(Args)]
 pub struct CommonHttpArgs {
@@ -10,6 +10,9 @@ pub struct CommonHttpArgs {
 
     #[arg(long, value_parser = parse_header)]
     pub header: Option<Vec<(HeaderName, HeaderValue)>>,
+
+    #[arg(long, short, value_parser = parse_param)]
+    pub param: Option<Vec<(String, String)>>,
 }
 
 #[derive(Args)]
