@@ -9,7 +9,7 @@ pub struct CommonHttpArgs {
     pub url: Url,
 
     #[arg(long, value_parser = parse_header)]
-    pub headers: Option<Vec<(HeaderName, HeaderValue)>>,
+    pub header: Option<Vec<(HeaderName, HeaderValue)>>,
 }
 
 #[derive(Args)]
