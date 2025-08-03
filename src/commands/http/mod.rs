@@ -27,8 +27,8 @@ pub struct PayloadArgs {
     #[arg(long, short, value_parser = parse_json)]
     pub json: Option<String>,
     // Uncomment once XML parser is setup.
-    // #[arg(long, short)]
-    // pub xml: Option<String>,
+    #[arg(long, short)]
+    pub xml: Option<String>,
 }
 
 #[derive(Subcommand)]

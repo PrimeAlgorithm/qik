@@ -3,13 +3,15 @@ pub mod execute;
 use crate::{
     commands::http::{CommonHttpArgs, HttpCommands, PayloadArgs},
     handlers::http::execute::{RequestInformation, execute},
+    models::http::Transaction,
 };
 use reqwest::{Client, Method};
 
-pub async fn execute_http_command(command: &HttpCommands, client: &Client) {
-    println!("Executing HTTP command.");
-
-    match command {
+pub async fn execute_http_command(
+    command: &HttpCommands,
+    client: &Client,
+) -> Result<Transaction, anyhow::Error> {
+    let result = match command {
         HttpCommands::Get { common } => execute_helper(client, Method::GET, common, &None).await,
         HttpCommands::Post { common, body } => {
             execute_helper(client, Method::POST, common, body).await
@@ -27,7 +29,9 @@ pub async fn execute_http_command(command: &HttpCommands, client: &Client) {
         HttpCommands::Options { common, body } => {
             execute_helper(client, Method::OPTIONS, common, body).await
         }
-    }
+    }?;
+
+    Ok(result)
 }
 
 async fn execute_helper(
@@ -35,8 +39,8 @@ async fn execute_helper(
     req_method: Method,
     common: &CommonHttpArgs,
     body: &Option<PayloadArgs>,
-) {
-    execute(
+) -> Result<Transaction, anyhow::Error> {
+    let transaction = execute(
         client,
         RequestInformation {
             method: req_method,
@@ -44,6 +48,7 @@ async fn execute_helper(
             body: body,
         },
     )
-    .await
-    .unwrap();
+    .await?;
+
+    Ok(transaction)
 }

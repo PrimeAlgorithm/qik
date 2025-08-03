@@ -8,7 +8,7 @@ use reqwest::{
     header::{CONTENT_TYPE, HeaderMap, HeaderValue},
 };
 
-/// Stores important information regarding the request.
+/// User-supplied request details passed down from the CLI layer.
 pub struct RequestInformation<'a> {
     pub method: Method,
 
@@ -17,21 +17,17 @@ pub struct RequestInformation<'a> {
     pub body: &'a Option<PayloadArgs>,
 }
 
-/// Handles sending the request, receiving the response,
-/// storing and returning that data in a Transaction struct.
+/// Send the request and return `(RequestSpec, ResponseData)`.
 pub async fn execute(
     client: &Client,
     req_info: RequestInformation<'_>,
 ) -> Result<Transaction, anyhow::Error> {
     let mut request = client.request(req_info.method.clone(), req_info.common.url.clone());
-    let mut request_headers = HeaderMap::new();
     let http_version = Version::HTTP_11;
     request = request.version(http_version);
 
-    // Used to check if the content type header is set.
-    // If this is set to true, no content-type header will
-    // be added by the program.
     let mut content_type_header_set = false;
+    let mut request_headers = HeaderMap::new();
 
     if let Some(headers) = &req_info.common.headers {
         for (key, value) in headers {
@@ -45,9 +41,7 @@ pub async fn execute(
 
     let mut request_body: Option<Bytes> = None;
 
-    // If any of the payload arguments are used, this block
-    // will add it to the body of the request, and potentially
-    // set a content-type header if needed.
+    // Setup the payload and create content-type if possible.
     if let Some(payload) = req_info.body {
         let mut content_type_hint: Option<&str> = None;
 
@@ -78,7 +72,6 @@ pub async fn execute(
     }
 
     request = request.headers(request_headers.clone());
-
     let result = request.send().await?;
 
     Ok((

@@ -1,4 +1,10 @@
-use crate::{commands::http::HttpCommands, handlers::http::execute_http_command};
+use std::io::Write;
+
+use crate::{
+    commands::http::HttpCommands,
+    handlers::http::execute_http_command,
+    output::{formatter::format_transaction, printer::Printer},
+};
 use clap::{Parser, Subcommand};
 use reqwest::Client;
 
@@ -17,10 +23,23 @@ pub enum Commands {
     },
 }
 
-pub async fn execute_cmd(cli: &Cli, http_client: &Client) {
-    println!("Executing top level command.");
-
+pub async fn execute_cmd<W: Write>(
+    cli: &Cli,
+    http_client: &Client,
+    printer: &mut Printer<W>,
+) -> anyhow::Result<()> {
     match &cli.commands {
-        Commands::Http { http_command } => execute_http_command(http_command, http_client).await,
+        Commands::Http { http_command } => {
+            let transaction = execute_http_command(http_command, http_client)
+                .await
+                .unwrap();
+            let (req, res) = format_transaction(transaction)?;
+
+            printer.println(&req)?;
+            printer.println("\n")?;
+            printer.println(&res)?;
+
+            Ok(())
+        }
     }
 }
