@@ -1,4 +1,5 @@
 use crate::models::http::{RequestSpec, ResponseData, Transaction};
+use anyhow::anyhow;
 use bytes::Bytes;
 use owo_colors::OwoColorize;
 use reqwest::{
@@ -27,7 +28,10 @@ fn format_request(request: RequestSpec) -> Result<String, anyhow::Error> {
     let stylized_method_display = cyan_method_display.bold();
     out.push_str(&format!("\n{stylized_method_display} {url} {version}"));
 
-    let host = url.host().unwrap().to_string();
+    let host = url
+        .host()
+        .map(|u| u.to_string())
+        .ok_or_else(|| anyhow!("URL has no host"))?;
     out.push_str(&format!("\n{}: {}", "host".bright_black(), host));
 
     if let Some(body) = &request.body {
@@ -85,12 +89,12 @@ fn format_body(body: &Option<Bytes>, headers: &HeaderMap) -> Result<Option<Strin
     let content_type_option = headers.get(CONTENT_TYPE);
 
     if let Some(payload) = body {
-        let bytes_to_str = std::str::from_utf8(&payload).unwrap();
+        let bytes_to_str = std::str::from_utf8(&payload)?;
 
         // If the user has specified that content_type is json or xml,
         // we can pretty print it.
         if let Some(content_type) = content_type_option {
-            match content_type.to_str().unwrap() {
+            match content_type.to_str()? {
                 "application/json" => {
                     formatted_payload = Some(get_pretty_json(bytes_to_str)?);
                 }

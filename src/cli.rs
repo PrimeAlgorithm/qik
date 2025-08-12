@@ -30,9 +30,7 @@ pub async fn execute_cmd<W: Write>(
 ) -> anyhow::Result<()> {
     match &cli.commands {
         Commands::Http { http_command } => {
-            let transaction = execute_http_command(http_command, http_client)
-                .await
-                .unwrap();
+            let transaction = execute_http_command(http_command, http_client).await?;
             let (req, res) = format_transaction(transaction)?;
 
             printer.println(&req)?;

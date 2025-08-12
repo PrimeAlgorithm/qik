@@ -16,5 +16,8 @@ async fn main() {
     let client = reqwest::Client::new();
     let mut printer = Printer::new(stdout());
 
-    execute_cmd(&cli, &client, &mut printer).await.unwrap();
+    if let Err(e) = execute_cmd(&cli, &client, &mut printer).await {
+        eprintln!("error: {e:?}");
+        std::process::exit(1);
+    }
 }

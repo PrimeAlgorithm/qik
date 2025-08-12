@@ -19,19 +19,22 @@ pub struct CommonHttpArgs {
 #[command(
     group(
         ArgGroup::new("payload")
-            .args(["raw", "json", "xml"])
+            .args(["raw", "json", "xml", "form"])
             .multiple(false)
     )
 )]
 pub struct PayloadArgs {
-    #[arg(long, short)]
+    #[arg(long, short, short)]
     pub raw: Option<String>,
 
     #[arg(long, short, value_parser = parse_json)]
     pub json: Option<String>,
-    // Uncomment once XML parser is setup.
-    #[arg(long, short)]
+
+    #[arg(long, short, short)]
     pub xml: Option<String>,
+
+    #[arg(long, short, short)]
+    pub form: Option<Vec<String>>,
 }
 
 #[derive(Subcommand)]

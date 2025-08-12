@@ -62,6 +62,8 @@ pub async fn execute(
             request_body = Some(body_bytes.clone());
             content_type_hint = Some("application/json");
             request = request.body(body_bytes);
+        } else if let Some(form) = &payload.form {
+            // request.form(form)
         }
 
         // TODO: Uncomment once XML parser is setup.
