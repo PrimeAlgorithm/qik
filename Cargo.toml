@@ -11,7 +11,7 @@ anyhow = "1.0.98"
 bytes = "1.10.1"
 clap = { version = "4.5.41", features = ["derive"] }
 owo-colors = "4.2.2"
-reqwest = "0.12.22"
+reqwest = { version = "0.12.22", features = ["multipart", "stream"] }
 serde = "1.0.219"
 serde_json = "1.0.142"
 tokio = { version = "1.46.1", features = ["full"] }

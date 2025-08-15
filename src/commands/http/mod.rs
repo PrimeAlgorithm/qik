@@ -2,7 +2,12 @@ use clap::{ArgGroup, Args, Subcommand};
 use reqwest::header::{HeaderName, HeaderValue};
 use url::Url;
 
-use crate::commands::parsers::{header::parse_header, json::parse_json, param::parse_param};
+use crate::commands::parsers::{
+    form::{FormData, parse_form},
+    header::parse_header,
+    json::parse_json,
+    param::parse_param,
+};
 
 #[derive(Args)]
 pub struct CommonHttpArgs {
@@ -24,17 +29,17 @@ pub struct CommonHttpArgs {
     )
 )]
 pub struct PayloadArgs {
-    #[arg(long, short, short)]
+    #[arg(long, short)]
     pub raw: Option<String>,
 
     #[arg(long, short, value_parser = parse_json)]
     pub json: Option<String>,
 
-    #[arg(long, short, short)]
+    #[arg(long, short)]
     pub xml: Option<String>,
 
-    #[arg(long, short, short)]
-    pub form: Option<Vec<String>>,
+    #[arg(long, short, value_parser = parse_form)]
+    pub form: Option<Vec<FormData>>,
 }
 
 #[derive(Subcommand)]

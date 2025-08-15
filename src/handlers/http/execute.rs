@@ -2,11 +2,14 @@ use crate::{
     commands::http::{CommonHttpArgs, PayloadArgs},
     models::http::{RequestSpec, ResponseData, Transaction},
 };
+use anyhow::anyhow;
 use bytes::Bytes;
 use reqwest::{
     Client, Method, Version,
     header::{CONTENT_TYPE, HeaderMap, HeaderValue},
+    multipart::Form,
 };
+use std::collections::HashMap;
 
 /// User-supplied request details passed down from the CLI layer.
 pub struct RequestInformation<'a> {
@@ -62,8 +65,41 @@ pub async fn execute(
             request_body = Some(body_bytes.clone());
             content_type_hint = Some("application/json");
             request = request.body(body_bytes);
-        } else if let Some(form) = &payload.form {
-            // request.form(form)
+        } else if let Some(form_data_list) = &payload.form {
+            let mut url_params = HashMap::new();
+            let mut multipart_form = Form::new();
+            let mut use_multipart = false;
+
+            for form_data in form_data_list.iter() {
+                if let Some(file_path) = &form_data.file_path {
+                    use_multipart = true;
+
+                    if let Some(file_name) = &form_data.file_name {
+                        multipart_form = multipart_form
+                            .file(file_name.clone(), file_path.clone())
+                            .await?;
+                    } else {
+                        let name = file_path
+                            .file_name()
+                            .ok_or_else(|| anyhow!("Failed to get file name from file path"))?
+                            .to_str()
+                            .ok_or_else(|| anyhow!("Failed to convert file name to string"))?
+                            .to_owned();
+                        multipart_form = multipart_form.file(name, file_path.clone()).await?;
+                    }
+                } else if let Some(str) = &form_data.str_value {
+                    url_params.insert(form_data.key.clone(), str.clone());
+                }
+            }
+
+            if use_multipart {
+                for (key, value) in url_params.into_iter() {
+                    multipart_form = multipart_form.text(key, value);
+                }
+                request = request.multipart(multipart_form);
+            } else {
+                request = request.form(&url_params);
+            }
         }
 
         // TODO: Uncomment once XML parser is setup.

@@ -34,7 +34,7 @@ pub async fn execute_cmd<W: Write>(
             let (req, res) = format_transaction(transaction)?;
 
             printer.println(&req)?;
-            printer.println("\n")?;
+            printer.print("\n")?;
             printer.println(&res)?;
 
             Ok(())
