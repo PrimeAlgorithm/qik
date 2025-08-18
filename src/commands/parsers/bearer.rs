@@ -1,5 +1,12 @@
 use crate::util::strip_quotes::strip_matching_quotes;
 
+/// Parses and validates a bearer token.
+///
+/// Removes surrounding whitespace and matching quotes if possible.
+///
+/// # Errors
+/// Returns an error if the token is empty after trimming, or if
+/// it contains whitespace/control characters.
 pub fn parse_bearer(token: &str) -> Result<String, String> {
     let formatted_token = strip_matching_quotes(token.trim());
 

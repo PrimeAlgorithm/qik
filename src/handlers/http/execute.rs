@@ -1,3 +1,9 @@
+//! Builds and executes requests (with data from [`RequestInformation`])
+//!
+//! This module turns parsed CLI arguments into a [`reqwest`] request,
+//! applies headers, authentication, parameters, and payloads, and
+//! returns both the request and response as structured data.
+
 use crate::{
     commands::http::{CommonHttpArgs, PayloadArgs},
     models::http::{RequestSpec, ResponseData, Transaction},

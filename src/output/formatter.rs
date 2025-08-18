@@ -1,3 +1,8 @@
+//! Handles formatting for requests and responses.
+//!
+//! This module handles converting a [`RequestSpec`] and [`ResponseData`]
+//! into human-readable strings with colors.
+
 use crate::models::http::{RequestSpec, ResponseData, Transaction};
 use anyhow::anyhow;
 use bytes::Bytes;

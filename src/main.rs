@@ -1,3 +1,6 @@
+//! Entry point for the CLI application.
+//! Parses arguments, builds an HTTP client, and delegates to the command layer.
+
 mod cli;
 mod commands;
 mod handlers;

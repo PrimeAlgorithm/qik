@@ -1,3 +1,6 @@
+/// Removes matching single or double quotes around a string slice.
+/// If there are no matching quotes found, the string is returned
+/// as is.
 pub fn strip_matching_quotes(s: &str) -> &str {
     if s.len() >= 2 {
         let bytes = s.as_bytes();

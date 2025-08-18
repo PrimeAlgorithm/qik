@@ -1,5 +1,10 @@
 use reqwest::header::{HeaderName, HeaderValue};
 
+/// Parses a `Key: Value` string into a header pair.
+///
+/// # Errors
+/// Returns an error if no `:` is present, or if the key or value
+/// is not a valid HTTP header.
 pub fn parse_header(header: &str) -> Result<(HeaderName, HeaderValue), String> {
     let (header_key_unformatted, header_value_formatted) = header
         .split_once(':')

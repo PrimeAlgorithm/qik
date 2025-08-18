@@ -1,3 +1,5 @@
+//! CLI parser definitions.
+
 pub mod auth;
 pub mod bearer;
 pub mod form;

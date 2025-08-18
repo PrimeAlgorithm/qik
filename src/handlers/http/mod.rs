@@ -1,3 +1,5 @@
+//! Handles HTTP related subcommands execution.
+
 pub mod execute;
 
 use crate::{
@@ -7,6 +9,7 @@ use crate::{
 };
 use reqwest::{Client, Method};
 
+/// Execute a parsed [`HttpCommands`] using the given HTTP client
 pub async fn execute_http_command(
     command: &HttpCommands,
     client: &Client,
@@ -34,6 +37,7 @@ pub async fn execute_http_command(
     Ok(result)
 }
 
+// Helper to construct a `RequestInformation` and forward it to `execute`.
 async fn execute_helper(
     client: &Client,
     req_method: Method,
