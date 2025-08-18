@@ -24,8 +24,6 @@ pub struct FormData {
 ///     Validate MIME field
 ///     Allow STDIN to function
 pub fn parse_form(form: &str) -> Result<FormData, String> {
-    println!("Form: {}", form);
-
     let (mut name, rhs) = form
         .split_once('=')
         .ok_or_else(|| "Form must be in `key=value` form")?;
@@ -105,8 +103,6 @@ pub fn parse_form(form: &str) -> Result<FormData, String> {
         // Text field
         form_data.str_value = Some(rhs.to_string());
     }
-
-    println!("Final: {:?}", form_data);
 
     Ok(form_data)
 }
