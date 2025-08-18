@@ -3,6 +3,7 @@ use crate::{
     models::http::{RequestSpec, ResponseData, Transaction},
 };
 use anyhow::anyhow;
+use base64::prelude::*;
 use bytes::Bytes;
 use reqwest::{
     Client, Method, Version,
@@ -115,6 +116,16 @@ pub async fn execute(
                 request_headers.insert(CONTENT_TYPE, HeaderValue::from_static(content_type));
             }
         }
+    }
+
+    if let Some(user_credentials) = &req_info.common.auth {
+        let credentials_encoded = BASE64_STANDARD.encode(user_credentials);
+        let formatted_auth_header = format!("Basic {}", credentials_encoded);
+
+        request_headers.append(
+            reqwest::header::AUTHORIZATION,
+            HeaderValue::from_str(&formatted_auth_header)?,
+        );
     }
 
     request = request.headers(request_headers.clone());

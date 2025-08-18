@@ -1,10 +1,13 @@
-use crate::models::http::{RequestSpec, ResponseData, Transaction};
+use crate::{
+    models::http::{RequestSpec, ResponseData, Transaction},
+    output,
+};
 use anyhow::anyhow;
 use bytes::Bytes;
 use owo_colors::OwoColorize;
 use reqwest::{
     StatusCode,
-    header::{CONTENT_TYPE, HeaderMap},
+    header::{AUTHORIZATION, CONTENT_TYPE, HeaderMap, HeaderName, PROXY_AUTHORIZATION},
 };
 
 /// Turn a `(RequestSpec, ResponseData)` into two terminal-friendly strings.
@@ -133,16 +136,42 @@ fn status_code_color(code: StatusCode) -> String {
     styled
 }
 
+fn is_sensitive(name: &HeaderName) -> bool {
+    name == AUTHORIZATION
+        || name == PROXY_AUTHORIZATION
+        || name.as_str().eq_ignore_ascii_case("cookie")
+}
+
 /// Return header block (`\nKey: Value…`) or empty string.
 fn format_headers(headers: &HeaderMap) -> Result<String, anyhow::Error> {
     let mut out = String::new();
 
-    for (header_name, header_value) in headers {
-        let header_key_unwrapped = header_name;
-        let header_key_stylized = header_key_unwrapped.bright_black();
-        let header_value_str = header_value.to_str()?;
+    for (name, value) in headers {
+        let key = name.bright_black();
 
-        out.push_str(&format!("\n{header_key_stylized}: {header_value_str}"));
+        if name == AUTHORIZATION {
+            let s = value.to_str().unwrap_or_default();
+            let scheme = s.splitn(2, char::is_whitespace).next().unwrap_or("");
+            if scheme.is_empty() {
+                out.push_str(&format!("\n{key}: <redacted>"));
+            } else {
+                out.push_str(&format!("\n{key}: {scheme} <redacted>"));
+            }
+            continue;
+        }
+
+        if is_sensitive(name) {
+            out.push_str(&format!("\n{key}: <redacted>"));
+            continue;
+        }
+
+        match value.to_str() {
+            Ok(v) => out.push_str(&format!("\n{key}: {v}")),
+            Err(_) => out.push_str(&format!(
+                "\n{key}: <non-UTF8 value ({} bytes)>",
+                value.as_bytes().len()
+            )),
+        }
     }
 
     Ok(out)

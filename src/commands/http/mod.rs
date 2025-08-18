@@ -3,6 +3,7 @@ use reqwest::header::{HeaderName, HeaderValue};
 use url::Url;
 
 use crate::commands::parsers::{
+    auth::parse_auth,
     form::{FormData, parse_form},
     header::parse_header,
     json::parse_json,
@@ -18,6 +19,9 @@ pub struct CommonHttpArgs {
 
     #[arg(long, short, value_parser = parse_param)]
     pub param: Option<Vec<(String, String)>>,
+
+    #[arg(long, short, value_parser = parse_auth)]
+    pub auth: Option<String>,
 }
 
 #[derive(Args)]
