@@ -4,6 +4,7 @@ use url::Url;
 
 use crate::commands::parsers::{
     auth::parse_auth,
+    bearer::parse_bearer,
     form::{FormData, parse_form},
     header::parse_header,
     json::parse_json,
@@ -11,6 +12,13 @@ use crate::commands::parsers::{
 };
 
 #[derive(Args)]
+#[command(
+    group(
+        ArgGroup::new("payload")
+            .args(["auth", "bearer"])
+            .multiple(false)
+    )
+)]
 pub struct CommonHttpArgs {
     pub url: Url,
 
@@ -22,6 +30,9 @@ pub struct CommonHttpArgs {
 
     #[arg(long, short, value_parser = parse_auth)]
     pub auth: Option<String>,
+
+    #[arg(long, short, value_parser = parse_bearer)]
+    pub bearer: Option<String>,
 }
 
 #[derive(Args)]

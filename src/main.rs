@@ -3,6 +3,7 @@ mod commands;
 mod handlers;
 mod models;
 mod output;
+mod util;
 
 use std::io::stdout;
 

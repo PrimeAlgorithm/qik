@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 
+use crate::util::strip_quotes::strip_matching_quotes;
+
 #[derive(Debug, Clone)]
 pub struct FormData {
     pub key: String,
@@ -107,18 +109,4 @@ pub fn parse_form(form: &str) -> Result<FormData, String> {
     println!("Final: {:?}", form_data);
 
     Ok(form_data)
-}
-
-pub fn strip_matching_quotes(s: &str) -> &str {
-    if s.len() >= 2 {
-        let bytes = s.as_bytes();
-        let first = bytes[0];
-        let last = bytes[bytes.len() - 1];
-        let matching_double = first == b'"' && last == b'"';
-        let matching_single = first == b'\'' && last == b'\'';
-        if matching_double || matching_single {
-            return &s[1..s.len() - 1];
-        }
-    }
-    s
 }

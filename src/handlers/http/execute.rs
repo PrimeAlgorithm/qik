@@ -126,6 +126,13 @@ pub async fn execute(
             reqwest::header::AUTHORIZATION,
             HeaderValue::from_str(&formatted_auth_header)?,
         );
+    } else if let Some(bearer_token) = &req_info.common.bearer {
+        let formatted_bearer_token = format!("Bearer {}", bearer_token);
+
+        request_headers.append(
+            reqwest::header::AUTHORIZATION,
+            HeaderValue::from_str(&formatted_bearer_token)?,
+        );
     }
 
     request = request.headers(request_headers.clone());

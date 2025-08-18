@@ -1,7 +1,4 @@
-use crate::{
-    models::http::{RequestSpec, ResponseData, Transaction},
-    output,
-};
+use crate::models::http::{RequestSpec, ResponseData, Transaction};
 use anyhow::anyhow;
 use bytes::Bytes;
 use owo_colors::OwoColorize;
