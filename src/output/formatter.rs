@@ -178,3 +178,32 @@ fn format_headers(headers: &HeaderMap) -> Result<String, anyhow::Error> {
 
     Ok(out)
 }
+
+#[cfg(test)]
+mod tests {
+    use reqwest::header::HeaderValue;
+
+    use super::*;
+
+    #[test]
+    fn test_basic_header_redaction() {
+        let mut headers = HeaderMap::new();
+        headers.insert(AUTHORIZATION, HeaderValue::from_static("Basic user:pass"));
+        let formatted_header = format_headers(&headers).unwrap();
+        assert_eq!(
+            formatted_header,
+            format!("\n{}: Basic <redacted>", "authorization".bright_black())
+        );
+    }
+
+    #[test]
+    fn test_bearer_header_redaction() {
+        let mut headers = HeaderMap::new();
+        headers.insert(AUTHORIZATION, HeaderValue::from_static("Bearer user:pass"));
+        let formatted_header = format_headers(&headers).unwrap();
+        assert_eq!(
+            formatted_header,
+            format!("\n{}: Bearer <redacted>", "authorization".bright_black())
+        );
+    }
+}

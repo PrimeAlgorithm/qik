@@ -14,3 +14,32 @@ pub fn strip_matching_quotes(s: &str) -> &str {
     }
     s
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_strip_double_quotes() {
+        let quotes_stripped = strip_matching_quotes("\"test\"");
+        assert_eq!(quotes_stripped, "test");
+    }
+
+    #[test]
+    fn test_strip_single_quotes() {
+        let quotes_stripped = strip_matching_quotes("'test'");
+        assert_eq!(quotes_stripped, "test");
+    }
+
+    #[test]
+    fn test_non_matching_double_quotes() {
+        let s = strip_matching_quotes("\"test");
+        assert_eq!(s, "\"test");
+    }
+
+    #[test]
+    fn test_non_matching_single_quotes() {
+        let s = strip_matching_quotes("'test");
+        assert_eq!(s, "'test");
+    }
+}

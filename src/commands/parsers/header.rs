@@ -17,3 +17,28 @@ pub fn parse_header(header: &str) -> Result<(HeaderName, HeaderValue), String> {
 
     Ok((key, value))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_basic_header() {
+        let (header_name, header_value) = parse_header("Key: Value").unwrap();
+        assert_eq!(header_name.as_str(), "key");
+        assert_eq!(header_value.to_str().unwrap(), "Value");
+    }
+
+    #[test]
+    fn test_header_no_whitespace() {
+        let (header_name, header_value) = parse_header("Key:Value").unwrap();
+        assert_eq!(header_name.as_str(), "key");
+        assert_eq!(header_value.to_str().unwrap(), "Value");
+    }
+
+    #[test]
+    fn test_missing_colon() {
+        let err = parse_header("keyvalue").unwrap_err();
+        assert_eq!(err, "Headers must be in `Key: Value` form");
+    }
+}

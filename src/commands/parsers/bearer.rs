@@ -24,3 +24,31 @@ pub fn parse_bearer(token: &str) -> Result<String, String> {
 
     Ok(formatted_token.to_owned())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_normal_token() {
+        assert_eq!(parse_bearer("access-token").unwrap(), "access-token");
+    }
+
+    #[test]
+    fn test_empty_token_err() {
+        let err = parse_bearer("").unwrap_err();
+        assert_eq!(err, "Bearer token must not be empty after being trimmed");
+    }
+
+    #[test]
+    fn test_whitespace_err() {
+        let err = parse_bearer("access token").unwrap_err();
+        assert_eq!(err, "Whitespace is not allowed in bearer token");
+    }
+
+    #[test]
+    fn test_control_char_err() {
+        let err = parse_bearer("access\0token").unwrap_err();
+        assert_eq!(err, "Control characters are not allowed in bearer token");
+    }
+}

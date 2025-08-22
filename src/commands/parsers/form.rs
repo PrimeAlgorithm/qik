@@ -106,3 +106,50 @@ pub fn parse_form(form: &str) -> Result<FormData, String> {
 
     Ok(form_data)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_basic_text_form() {
+        let form = parse_form("key=value").unwrap();
+        assert_eq!(form.key, "key");
+        assert_eq!(form.str_value.as_deref(), Some("value"));
+        assert!(form.file_name.is_none());
+        assert!(form.file_path.is_none());
+    }
+
+    #[test]
+    fn test_text_value_keeps_everything_after_first_equals() {
+        let form = parse_form("k=a=b=c").unwrap();
+        assert_eq!(form.key, "k");
+        assert_eq!(form.str_value.as_deref(), Some("a=b=c"));
+    }
+
+    #[test]
+    fn test_text_value_preserves_leading_spaces() {
+        // rhs is taken literally (no trimming for text fields)
+        let form = parse_form("k=  value").unwrap();
+        assert_eq!(form.key, "k");
+        assert_eq!(form.str_value.as_deref(), Some("  value"));
+    }
+
+    #[test]
+    fn test_multipart_form_path_only() {
+        let form = parse_form("key=@/tmp/file.bin").unwrap();
+        assert_eq!(form.key, "key");
+        assert_eq!(form.file_path.unwrap(), PathBuf::from("/tmp/file.bin"));
+        assert!(form.file_name.is_none());
+        assert!(form.str_value.is_none());
+    }
+
+    #[test]
+    fn test_multipart_form_with_filename() {
+        let form = parse_form("key=@/tmp/file.bin;filename=random.bin").unwrap();
+        assert_eq!(form.key, "key");
+        assert_eq!(form.file_name.unwrap(), "random.bin");
+        assert_eq!(form.file_path.unwrap(), PathBuf::from("/tmp/file.bin"));
+        assert!(form.str_value.is_none());
+    }
+}
