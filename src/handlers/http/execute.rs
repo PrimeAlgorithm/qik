@@ -8,13 +8,12 @@ use crate::{
     commands::http::{CommonHttpArgs, PayloadArgs},
     models::http::{RequestSpec, ResponseData, Transaction},
 };
-use anyhow::anyhow;
 use base64::prelude::*;
 use bytes::Bytes;
 use reqwest::{
-    Method, Version,
+    Client, Method, Version,
     header::{CONTENT_TYPE, HeaderMap, HeaderValue},
-    multipart::Form,
+    multipart::{Form, Part},
 };
 use std::collections::HashMap;
 
@@ -36,26 +35,9 @@ pub async fn execute(req_info: RequestInformation<'_>) -> Result<Transaction, an
         url.query_pairs_mut().extend_pairs(params.iter());
     }
 
-    let mut requested_http_version = None;
-
     // Build the client.
-    let client = match req_info.common.http_version.as_ref() {
-        "1.0" => {
-            requested_http_version = Some(Version::HTTP_10);
-            reqwest::Client::builder().http1_only().build()?
-        }
-        "1.1" => {
-            requested_http_version = Some(Version::HTTP_11);
-            reqwest::Client::builder().http1_only().build()?
-        }
-        "2" => {
-            requested_http_version = Some(Version::HTTP_2);
-            reqwest::Client::builder().http2_prior_knowledge().build()?
-        }
-        // Let reqwest negotiate automatically
-        "auto" => reqwest::Client::new(),
-        _ => reqwest::Client::new(),
-    };
+    let (requested_http_version, client) =
+        build_http_client(req_info.common.http_version.as_ref())?;
 
     // Setup the request.
     let mut request = client.request(req_info.method.clone(), url.clone());
@@ -101,19 +83,11 @@ pub async fn execute(req_info: RequestInformation<'_>) -> Result<Transaction, an
                 if let Some(file_path) = &form_data.file_path {
                     use_multipart = true;
 
+                    let mut part = Part::file(file_path.clone()).await?;
                     if let Some(file_name) = &form_data.file_name {
-                        multipart_form = multipart_form
-                            .file(file_name.clone(), file_path.clone())
-                            .await?;
-                    } else {
-                        let name = file_path
-                            .file_name()
-                            .ok_or_else(|| anyhow!("Failed to get file name from file path"))?
-                            .to_str()
-                            .ok_or_else(|| anyhow!("Failed to convert file name to string"))?
-                            .to_owned();
-                        multipart_form = multipart_form.file(name, file_path.clone()).await?;
+                        part = part.file_name(file_name.clone()); // this controls the transmitted filename
                     }
+                    multipart_form = multipart_form.part(form_data.key.clone(), part);
                 } else if let Some(str) = &form_data.str_value {
                     url_params.insert(form_data.key.clone(), str.clone());
                 }
@@ -178,4 +152,28 @@ pub async fn execute(req_info: RequestInformation<'_>) -> Result<Transaction, an
             body: result.bytes().await?,
         },
     ))
+}
+
+/// Creates a tuple that contains a `Version` (if possible) and a `Client`
+/// from a string.
+fn build_http_client(
+    http_version: &str,
+) -> Result<(Option<reqwest::Version>, Client), anyhow::Error> {
+    Ok(match http_version {
+        "1.0" => (
+            Some(Version::HTTP_10),
+            reqwest::Client::builder().http1_only().build()?,
+        ),
+        "1.1" => (
+            Some(Version::HTTP_11),
+            reqwest::Client::builder().http1_only().build()?,
+        ),
+        "2" => (
+            Some(Version::HTTP_2),
+            reqwest::Client::builder().http2_prior_knowledge().build()?,
+        ),
+        // Let reqwest negotiate automatically
+        "auto" => (None, reqwest::Client::new()),
+        _ => (None, reqwest::Client::new()),
+    })
 }
