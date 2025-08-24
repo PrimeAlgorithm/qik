@@ -112,7 +112,10 @@ fn format_body(body: &Option<Bytes>, headers: &HeaderMap) -> Result<Option<Strin
     let mut formatted_payload = None;
 
     if let Some(payload) = body {
-        let bytes_to_str = std::str::from_utf8(&payload)?;
+        let bytes_to_str = match std::str::from_utf8(&payload) {
+            Ok(s) => s,
+            Err(_) => return Ok(Some(format!("<non-UTF8 body ({} bytes)>", payload.len()))),
+        };
 
         // Parse Content-Type
         let ct: Option<Mime> = headers
