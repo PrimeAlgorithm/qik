@@ -7,6 +7,7 @@ use crate::commands::parsers::{
     header::parse_header,
     json::parse_json,
     param::parse_param,
+    xml::parse_xml,
 };
 use clap::{ArgGroup, Args, Subcommand};
 use reqwest::header::{HeaderName, HeaderValue};
@@ -65,7 +66,7 @@ pub struct PayloadArgs {
 
     /// Validates and sends XML as is. Implies `Content-Type: application/xml` unless
     /// content-type header is provided via `--header`.
-    #[arg(long, short)]
+    #[arg(long, short, value_parser = parse_xml)]
     pub xml: Option<String>,
 
     /// Repeatable form fields to send with the request. `key=value` (text) or

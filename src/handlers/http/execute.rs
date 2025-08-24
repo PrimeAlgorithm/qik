@@ -107,15 +107,12 @@ pub async fn execute(
             } else {
                 request = request.form(&url_params);
             }
+        } else if let Some(xml) = &payload.xml {
+            let body_bytes = Bytes::from(xml.clone());
+            request_body = Some(body_bytes.clone());
+            content_type_hint = Some("application/xml");
+            request = request.body(body_bytes);
         }
-
-        // TODO: Uncomment once XML parser is setup.
-        // else if let Some(xml) = &payload.xml {
-        //     let body_bytes = Bytes::from(xml.clone());
-        //     request_body = Some(body_bytes.clone());
-        //     content_type_hint = Some("application/xml");
-        //     request = request.body(body_bytes);
-        // }
 
         if !content_type_header_set {
             if let Some(content_type) = content_type_hint {
