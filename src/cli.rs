@@ -6,7 +6,6 @@ use crate::{
     output::{formatter::format_transaction, printer::Printer},
 };
 use clap::{Parser, Subcommand};
-use reqwest::Client;
 use std::io::Write;
 
 /// This struct is the root of the CLI tree, which is used
@@ -34,14 +33,10 @@ pub enum Commands {
 ///
 /// # Errors
 /// Returns an error if the command execution or formatting fails.
-pub async fn execute_cmd<W: Write>(
-    cli: &Cli,
-    http_client: &Client,
-    printer: &mut Printer<W>,
-) -> anyhow::Result<()> {
+pub async fn execute_cmd<W: Write>(cli: &Cli, printer: &mut Printer<W>) -> anyhow::Result<()> {
     match &cli.commands {
         Commands::Http { http_command } => {
-            let transaction = execute_http_command(http_command, http_client).await?;
+            let transaction = execute_http_command(http_command).await?;
             let (req, res) = format_transaction(transaction)?;
 
             printer.println(&req)?;

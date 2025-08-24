@@ -27,11 +27,22 @@ fn format_request(request: RequestSpec) -> Result<String, anyhow::Error> {
     out.push_str(&format!("{title}"));
 
     let url = request.url;
-    let version = format!("{:?}", request.version);
+
+    let version_display = match request.version {
+        Some(requested) if requested != request.negotiated => {
+            format!("{:?} (negotiated: {:?})", requested, request.negotiated)
+        }
+        Some(requested) => format!("{:?}", requested),
+        None => format!("{:?} (auto-negotiated)", request.negotiated),
+    };
+
     let method = request.method.as_str();
     let cyan_method_display = method.cyan();
     let stylized_method_display = cyan_method_display.bold();
-    out.push_str(&format!("\n{stylized_method_display} {url} {version}"));
+
+    out.push_str(&format!(
+        "\n{stylized_method_display} {url} {version_display}"
+    ));
 
     let host = url
         .host()

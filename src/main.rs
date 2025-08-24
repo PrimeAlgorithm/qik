@@ -17,10 +17,9 @@ use cli::Cli;
 #[tokio::main]
 async fn main() {
     let cli = Cli::parse();
-    let client = reqwest::Client::new();
     let mut printer = Printer::new(stdout());
 
-    if let Err(e) = execute_cmd(&cli, &client, &mut printer).await {
+    if let Err(e) = execute_cmd(&cli, &mut printer).await {
         eprintln!("error: {e:?}");
         std::process::exit(1);
     }

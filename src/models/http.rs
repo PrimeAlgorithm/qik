@@ -10,8 +10,11 @@ pub struct RequestSpec {
     /// HTTP verb.
     pub method: Method,
 
-    /// Version of HTTP protocol being used.
-    pub version: Version,
+    /// What the user requested. `None` means "auto" (let the client negotiate).
+    pub version: Option<Version>,
+
+    /// What actually happened on the wire (same as ResponseData.version).
+    pub negotiated: Version,
 
     /// Target url.
     pub url: Url,

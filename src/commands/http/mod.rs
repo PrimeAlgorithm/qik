@@ -41,6 +41,13 @@ pub struct CommonHttpArgs {
     /// Bearer token (matching quotes are removed from bearer value).
     #[arg(long, short, value_parser = parse_bearer)]
     pub bearer: Option<String>,
+
+    #[
+        arg(long = "http-version", short = 'H', 
+        value_parser = ["auto", "1.0", "1.1", "2"], 
+        default_value = "auto")
+    ]
+    pub http_version: String,
 }
 
 /// Optional request body for methods that support one.

@@ -12,7 +12,7 @@ use anyhow::anyhow;
 use base64::prelude::*;
 use bytes::Bytes;
 use reqwest::{
-    Client, Method, Version,
+    Method, Version,
     header::{CONTENT_TYPE, HeaderMap, HeaderValue},
     multipart::Form,
 };
@@ -28,10 +28,7 @@ pub struct RequestInformation<'a> {
 }
 
 /// Send the request and return `(RequestSpec, ResponseData)`.
-pub async fn execute(
-    client: &Client,
-    req_info: RequestInformation<'_>,
-) -> Result<Transaction, anyhow::Error> {
+pub async fn execute(req_info: RequestInformation<'_>) -> Result<Transaction, anyhow::Error> {
     let mut url = req_info.common.url.clone();
 
     // If the user has added params, create a new URL with it.
@@ -39,10 +36,33 @@ pub async fn execute(
         url.query_pairs_mut().extend_pairs(params.iter());
     }
 
+    let mut requested_http_version = None;
+
+    // Build the client.
+    let client = match req_info.common.http_version.as_ref() {
+        "1.0" => {
+            requested_http_version = Some(Version::HTTP_10);
+            reqwest::Client::builder().http1_only().build()?
+        }
+        "1.1" => {
+            requested_http_version = Some(Version::HTTP_11);
+            reqwest::Client::builder().http1_only().build()?
+        }
+        "2" => {
+            requested_http_version = Some(Version::HTTP_2);
+            reqwest::Client::builder().http2_prior_knowledge().build()?
+        }
+        // Let reqwest negotiate automatically
+        "auto" => reqwest::Client::new(),
+        _ => reqwest::Client::new(),
+    };
+
     // Setup the request.
     let mut request = client.request(req_info.method.clone(), url.clone());
-    let http_version = Version::HTTP_11;
-    request = request.version(http_version);
+
+    if let Some(v) = requested_http_version {
+        request = request.version(v);
+    }
 
     let mut content_type_header_set = false;
     let mut request_headers = HeaderMap::new();
@@ -140,18 +160,20 @@ pub async fn execute(
 
     request = request.headers(request_headers.clone());
     let result = request.send().await?;
+    let negotiated = result.version();
 
     Ok((
         RequestSpec {
             method: req_info.method,
-            version: http_version,
+            version: requested_http_version,
+            negotiated: negotiated,
             url: url.clone(),
             headers: request_headers,
             body: request_body,
         },
         ResponseData {
             status: result.status(),
-            version: result.version(),
+            version: negotiated,
             headers: result.headers().clone(),
             body: result.bytes().await?,
         },
