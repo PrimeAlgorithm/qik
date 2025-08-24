@@ -54,7 +54,7 @@ fn format_request(request: RequestSpec) -> Result<String, anyhow::Error> {
         let content_length = body.len().to_string();
         out.push_str(&format!(
             "\n{}: {}",
-            "content-length:".bright_black(),
+            "content-length".bright_black(),
             content_length
         ));
     }
