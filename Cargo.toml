@@ -11,6 +11,7 @@ anyhow = "1.0.98"
 base64 = "0.22.1"
 bytes = "1.10.1"
 clap = { version = "4.5.41", features = ["derive"] }
+mime = "0.3.17"
 owo-colors = "4.2.2"
 reqwest = { version = "0.12.22", features = ["multipart", "stream"] }
 serde = "1.0.219"

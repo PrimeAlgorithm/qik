@@ -6,6 +6,7 @@
 use crate::models::http::{RequestSpec, ResponseData, Transaction};
 use anyhow::anyhow;
 use bytes::Bytes;
+use mime::{JSON, Mime, XML};
 use owo_colors::OwoColorize;
 use reqwest::{
     StatusCode,
@@ -99,29 +100,35 @@ fn format_response(response: ResponseData) -> Result<String, anyhow::Error> {
 
 // helpers
 
+fn is_json_like(mt: &Mime) -> bool {
+    mt.subtype() == JSON || mt.suffix() == Some(JSON)
+}
+fn is_xml_like(mt: &Mime) -> bool {
+    mt.subtype() == XML || mt.suffix() == Some(XML)
+}
+
 // Return body of request/response formatted if possible.
 fn format_body(body: &Option<Bytes>, headers: &HeaderMap) -> Result<Option<String>, anyhow::Error> {
     let mut formatted_payload = None;
-    let content_type_option = headers.get(CONTENT_TYPE);
 
     if let Some(payload) = body {
         let bytes_to_str = std::str::from_utf8(&payload)?;
 
-        // If the user has specified that content_type is json or xml,
-        // we can pretty print it.
-        if let Some(content_type) = content_type_option {
-            match content_type.to_str()? {
-                "application/json" => {
-                    formatted_payload = Some(get_pretty_json(bytes_to_str)?);
-                }
-                "application/xml" => {}
-                _ => {
-                    // Some other format that cannot be pretty printed.
-                    formatted_payload = Some(bytes_to_str.to_string());
-                }
+        // Parse Content-Type
+        let ct: Option<Mime> = headers
+            .get(CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .and_then(|s| s.parse::<Mime>().ok());
+
+        if let Some(mt) = ct {
+            if is_json_like(&mt) {
+                formatted_payload = Some(pretty_json(bytes_to_str)?);
+            } else if is_xml_like(&mt) {
+                formatted_payload = Some(bytes_to_str.to_string());
+            } else {
+                formatted_payload = Some(bytes_to_str.to_string());
             }
         } else {
-            // Content type was not specified, so just place string.
             formatted_payload = Some(bytes_to_str.to_string());
         }
     }
@@ -130,7 +137,7 @@ fn format_body(body: &Option<Bytes>, headers: &HeaderMap) -> Result<Option<Strin
 }
 
 /// Returns pretty-print JSON bodies.
-fn get_pretty_json(json_str: &str) -> Result<String, anyhow::Error> {
+fn pretty_json(json_str: &str) -> Result<String, anyhow::Error> {
     let json_value: serde_json::Value = serde_json::from_str(json_str)?;
     let formatted_json = serde_json::to_string_pretty(&json_value)?;
 
