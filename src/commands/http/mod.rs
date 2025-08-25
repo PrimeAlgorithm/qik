@@ -34,7 +34,7 @@ pub struct CommonHttpArgs {
     #[arg(long, short, value_parser = parse_param)]
     pub param: Option<Vec<(String, String)>>,
 
-    ///  Basic auth credentials in `user:pass` form.
+    /// Basic auth credentials in `user:pass` form.
     #[arg(long, short, value_parser = parse_auth)]
     pub auth: Option<String>,
 
@@ -48,6 +48,18 @@ pub struct CommonHttpArgs {
         default_value = "auto")
     ]
     pub http_version: String,
+
+    /// DANGEROUS:
+    /// Will allow connections to proceed even if the server’s certificate is invalid.
+    /// Using this may open you to vulnerabilities and attacks.
+    #[arg(long)]
+    pub insecure: bool,
+
+    /// DANGEROUS:
+    /// Will allow connections to proceed even if the server’s hostname is invalid.
+    /// Using this may open you to vulnerabilities and attacks.
+    #[arg(long = "no-verify-hostname")]
+    pub no_verify_hostname: bool,
 }
 
 /// Optional request body for methods that support one.

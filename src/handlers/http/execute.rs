@@ -28,6 +28,18 @@ pub struct RequestInformation<'a> {
 
 /// Send the request and return `(RequestSpec, ResponseData)`.
 pub async fn execute(req_info: RequestInformation<'_>) -> Result<Transaction, anyhow::Error> {
+    if req_info.common.insecure || req_info.common.no_verify_hostname {
+        use owo_colors::OwoColorize;
+        eprintln!(
+            "{}",
+            "WARNING: Certificate verification is DISABLED or PARTIALLY DISABLED.\n\
+         The server's identity is NOT verified.\n\
+         Use only on trusted networks. "
+                .yellow()
+                .bold()
+        );
+    }
+
     let mut url = req_info.common.url.clone();
 
     // If the user has added params, create a new URL with it.
@@ -37,7 +49,7 @@ pub async fn execute(req_info: RequestInformation<'_>) -> Result<Transaction, an
 
     // Build the client.
     let (requested_http_version, client) =
-        build_http_client(req_info.common.http_version.as_ref())?;
+        build_http_client(req_info.common.http_version.as_ref(), req_info.common)?;
 
     // Setup the request.
     let mut request = client.request(req_info.method.clone(), url.clone());
@@ -158,22 +170,47 @@ pub async fn execute(req_info: RequestInformation<'_>) -> Result<Transaction, an
 /// from a string.
 fn build_http_client(
     http_version: &str,
+    common: &CommonHttpArgs,
 ) -> Result<(Option<reqwest::Version>, Client), anyhow::Error> {
     Ok(match http_version {
         "1.0" => (
             Some(Version::HTTP_10),
-            reqwest::Client::builder().http1_only().build()?,
+            reqwest::Client::builder()
+                .danger_accept_invalid_certs(common.insecure)
+                .danger_accept_invalid_hostnames(common.no_verify_hostname)
+                .http1_only()
+                .build()?,
         ),
         "1.1" => (
             Some(Version::HTTP_11),
-            reqwest::Client::builder().http1_only().build()?,
+            reqwest::Client::builder()
+                .danger_accept_invalid_certs(common.insecure)
+                .danger_accept_invalid_hostnames(common.no_verify_hostname)
+                .http1_only()
+                .build()?,
         ),
         "2" => (
             Some(Version::HTTP_2),
-            reqwest::Client::builder().http2_prior_knowledge().build()?,
+            reqwest::Client::builder()
+                .danger_accept_invalid_certs(common.insecure)
+                .danger_accept_invalid_hostnames(common.no_verify_hostname)
+                .http2_prior_knowledge()
+                .build()?,
         ),
         // Let reqwest negotiate automatically
-        "auto" => (None, reqwest::Client::new()),
-        _ => (None, reqwest::Client::new()),
+        "auto" => (
+            None,
+            reqwest::Client::builder()
+                .danger_accept_invalid_certs(common.insecure)
+                .danger_accept_invalid_hostnames(common.no_verify_hostname)
+                .build()?,
+        ),
+        _ => (
+            None,
+            reqwest::Client::builder()
+                .danger_accept_invalid_certs(common.insecure)
+                .danger_accept_invalid_hostnames(common.no_verify_hostname)
+                .build()?,
+        ),
     })
 }
