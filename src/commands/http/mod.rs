@@ -63,6 +63,8 @@ pub struct CommonHttpArgs {
     #[arg(long = "no-verify-hostname")]
     pub no_verify_hostname: bool,
 
+    /// Adds trusted certificate authority certificates.
+    /// Repeatable: pass --cacert multiple times or use a PEM bundle.
     #[arg(long)]
     pub cacert: Option<Vec<PathBuf>>,
 }
