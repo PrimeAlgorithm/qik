@@ -1,5 +1,7 @@
 //! HTTP subcommands and their argument structures.
 
+use std::path::PathBuf;
+
 use crate::commands::parsers::{
     auth::parse_auth,
     bearer::parse_bearer,
@@ -60,6 +62,9 @@ pub struct CommonHttpArgs {
     /// Using this may open you to vulnerabilities and attacks.
     #[arg(long = "no-verify-hostname")]
     pub no_verify_hostname: bool,
+
+    #[arg(long)]
+    pub cacert: Option<Vec<PathBuf>>,
 }
 
 /// Optional request body for methods that support one.

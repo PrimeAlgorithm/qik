@@ -11,11 +11,11 @@ use crate::{
 use base64::prelude::*;
 use bytes::Bytes;
 use reqwest::{
-    Client, Method, Version,
+    Certificate, Client, Method, Version,
     header::{CONTENT_TYPE, HeaderMap, HeaderValue},
     multipart::{Form, Part},
 };
-use std::collections::HashMap;
+use std::{collections::HashMap, fs, io::Read, path::PathBuf};
 
 /// User-supplied request details passed down from the CLI layer.
 pub struct RequestInformation<'a> {
@@ -42,14 +42,25 @@ pub async fn execute(req_info: RequestInformation<'_>) -> Result<Transaction, an
 
     let mut url = req_info.common.url.clone();
 
+    let mut certs: Vec<Certificate> = Vec::new();
+
+    if let Some(ca_paths) = &req_info.common.cacert {
+        for path in ca_paths.iter() {
+            certs.extend(load_ca_certificates(path)?);
+        }
+    }
+
     // If the user has added params, create a new URL with it.
     if let Some(params) = &req_info.common.param {
         url.query_pairs_mut().extend_pairs(params.iter());
     }
 
     // Build the client.
-    let (requested_http_version, client) =
-        build_http_client(req_info.common.http_version.as_ref(), req_info.common)?;
+    let (requested_http_version, client) = build_http_client(
+        req_info.common.http_version.as_ref(),
+        req_info.common,
+        certs,
+    )?;
 
     // Setup the request.
     let mut request = client.request(req_info.method.clone(), url.clone());
@@ -171,46 +182,46 @@ pub async fn execute(req_info: RequestInformation<'_>) -> Result<Transaction, an
 fn build_http_client(
     http_version: &str,
     common: &CommonHttpArgs,
+    trusted_certs: Vec<Certificate>,
 ) -> Result<(Option<reqwest::Version>, Client), anyhow::Error> {
-    Ok(match http_version {
+    let (version, mut client_builder) = match http_version {
         "1.0" => (
             Some(Version::HTTP_10),
-            reqwest::Client::builder()
-                .danger_accept_invalid_certs(common.insecure)
-                .danger_accept_invalid_hostnames(common.no_verify_hostname)
-                .http1_only()
-                .build()?,
+            reqwest::Client::builder().http1_only(),
         ),
         "1.1" => (
             Some(Version::HTTP_11),
-            reqwest::Client::builder()
-                .danger_accept_invalid_certs(common.insecure)
-                .danger_accept_invalid_hostnames(common.no_verify_hostname)
-                .http1_only()
-                .build()?,
+            reqwest::Client::builder().http1_only(),
         ),
         "2" => (
             Some(Version::HTTP_2),
-            reqwest::Client::builder()
-                .danger_accept_invalid_certs(common.insecure)
-                .danger_accept_invalid_hostnames(common.no_verify_hostname)
-                .http2_prior_knowledge()
-                .build()?,
+            reqwest::Client::builder().http2_prior_knowledge(),
         ),
         // Let reqwest negotiate automatically
-        "auto" => (
-            None,
-            reqwest::Client::builder()
-                .danger_accept_invalid_certs(common.insecure)
-                .danger_accept_invalid_hostnames(common.no_verify_hostname)
-                .build()?,
-        ),
-        _ => (
-            None,
-            reqwest::Client::builder()
-                .danger_accept_invalid_certs(common.insecure)
-                .danger_accept_invalid_hostnames(common.no_verify_hostname)
-                .build()?,
-        ),
-    })
+        "auto" => (None, reqwest::Client::builder()),
+        _ => (None, reqwest::Client::builder()),
+    };
+
+    client_builder = client_builder
+        .danger_accept_invalid_certs(common.insecure)
+        .danger_accept_invalid_hostnames(common.no_verify_hostname);
+
+    for cert in trusted_certs.into_iter() {
+        client_builder = client_builder.add_root_certificate(cert);
+    }
+
+    return Ok((version, client_builder.build()?));
+}
+
+fn load_ca_certificates(path: &PathBuf) -> Result<Vec<Certificate>, anyhow::Error> {
+    let mut data = Vec::new();
+    fs::File::open(&path)?.read_to_end(&mut data)?;
+
+    let pem_certs = reqwest::Certificate::from_pem_bundle(&data).ok();
+    if let Some(certs) = pem_certs {
+        return Ok(certs);
+    }
+
+    let der_cert = reqwest::Certificate::from_der(&data)?;
+    Ok(vec![der_cert])
 }
