@@ -73,6 +73,10 @@ pub async fn execute(req_info: RequestInformation<'_>) -> Result<Transaction, an
     // Setup the request.
     let mut request = client.request(req_info.method.clone(), url.clone());
 
+    if let Some(time) = req_info.common.timeout {
+        request = request.timeout(time);
+    }
+
     if let Some(v) = requested_http_version {
         request = request.version(v);
     }

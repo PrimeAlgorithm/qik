@@ -12,6 +12,7 @@ use crate::commands::parsers::{
     xml::parse_xml,
 };
 use clap::{ArgGroup, Args, Subcommand, command};
+use humantime::parse_duration;
 use reqwest::header::{HeaderName, HeaderValue};
 use url::Url;
 
@@ -88,6 +89,11 @@ pub struct CommonHttpArgs {
     /// Password for the `--p12` PKCS#12 archive (use empty string if none).
     #[arg(long = "p12-pass", requires = "p12")]
     pub p12_pass: Option<String>,
+
+    /// If the request takes longer than the specified timeout
+    /// the request will fail with a timeout error.
+    #[arg(long, value_parser = parse_duration)]
+    pub timeout: Option<std::time::Duration>,
 }
 
 /// Optional request body for methods that support one.
