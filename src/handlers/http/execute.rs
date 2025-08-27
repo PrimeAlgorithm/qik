@@ -11,7 +11,7 @@ use crate::{
 use base64::prelude::*;
 use bytes::Bytes;
 use reqwest::{
-    Certificate, Client, Method, Version,
+    Certificate, Client, Identity, Method, Version,
     header::{CONTENT_TYPE, HeaderMap, HeaderValue},
     multipart::{Form, Part},
 };
@@ -43,12 +43,19 @@ pub async fn execute(req_info: RequestInformation<'_>) -> Result<Transaction, an
     let mut url = req_info.common.url.clone();
 
     let mut certs: Vec<Certificate> = Vec::new();
-
     if let Some(ca_paths) = &req_info.common.cacert {
         for path in ca_paths.iter() {
             certs.extend(load_ca_certificates(path)?);
         }
     }
+
+    let client_identity = load_client_cert(
+        &req_info.common.identity_pem,
+        &req_info.common.cert,
+        &req_info.common.key,
+        &req_info.common.p12,
+        &req_info.common.p12_pass,
+    );
 
     // If the user has added params, create a new URL with it.
     if let Some(params) = &req_info.common.param {
@@ -60,6 +67,7 @@ pub async fn execute(req_info: RequestInformation<'_>) -> Result<Transaction, an
         req_info.common.http_version.as_ref(),
         req_info.common,
         certs,
+        client_identity,
     )?;
 
     // Setup the request.
@@ -183,6 +191,7 @@ fn build_http_client(
     http_version: &str,
     common: &CommonHttpArgs,
     trusted_certs: Vec<Certificate>,
+    client_identity: Option<Identity>,
 ) -> Result<(Option<reqwest::Version>, Client), anyhow::Error> {
     let (version, mut client_builder) = match http_version {
         "1.0" => (
@@ -210,6 +219,10 @@ fn build_http_client(
         client_builder = client_builder.add_root_certificate(cert);
     }
 
+    if let Some(identity) = client_identity {
+        client_builder = client_builder.identity(identity);
+    }
+
     return Ok((version, client_builder.build()?));
 }
 
@@ -224,4 +237,33 @@ fn load_ca_certificates(path: &PathBuf) -> Result<Vec<Certificate>, anyhow::Erro
 
     let der_cert = reqwest::Certificate::from_der(&data)?;
     Ok(vec![der_cert])
+}
+
+pub fn load_client_cert(
+    identity_pem: &Option<PathBuf>,
+    cert: &Option<PathBuf>,
+    key: &Option<PathBuf>,
+    p12: &Option<PathBuf>,
+    p12_pass: &Option<String>,
+) -> Option<Identity> {
+    match (identity_pem, cert, key, p12) {
+        (Some(pem), None, None, None) => {
+            let bytes = fs::read(pem).ok()?;
+            Identity::from_pem(&bytes).ok()
+        }
+
+        (None, Some(c), Some(k), None) => {
+            let cert_b = fs::read(c).ok()?;
+            let key_b = fs::read(k).ok()?;
+            Identity::from_pkcs8_pem(&cert_b, &key_b).ok()
+        }
+
+        (None, None, None, Some(p)) => {
+            let der = fs::read(p).ok()?;
+            let pass = p12_pass.as_deref().unwrap_or("");
+            Identity::from_pkcs12_der(&der, pass).ok()
+        }
+
+        _ => None,
+    }
 }

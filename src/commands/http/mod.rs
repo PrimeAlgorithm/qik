@@ -11,11 +11,10 @@ use crate::commands::parsers::{
     param::parse_param,
     xml::parse_xml,
 };
-use clap::{ArgGroup, Args, Subcommand};
+use clap::{ArgGroup, Args, Subcommand, command};
 use reqwest::header::{HeaderName, HeaderValue};
 use url::Url;
 
-/// Arguments that all HTTP verbs contain.
 #[derive(Args)]
 #[command(
     group(
@@ -67,6 +66,28 @@ pub struct CommonHttpArgs {
     /// Repeatable: pass --cacert multiple times or use a PEM bundle.
     #[arg(long)]
     pub cacert: Option<Vec<PathBuf>>,
+
+    #[arg(long = "identity-pem", conflicts_with_all = ["cert", "key"])]
+    pub identity_pem: Option<PathBuf>,
+
+    /// Client certificate chain in PEM (leaf first, then intermediates).
+    /// Use with `--key`.
+    #[arg(long, requires = "key")]
+    pub cert: Option<PathBuf>,
+
+    /// Matching client private key in PKCS#8 PEM.
+    /// Use with `--cert`.
+    #[arg(long, requires = "cert")]
+    pub key: Option<PathBuf>,
+
+    /// PKCS#12/.pfx containing client key and cert chain.
+    /// Use with `--p12-pass`.
+    #[arg(long, requires = "p12_pass")]
+    pub p12: Option<PathBuf>,
+
+    /// Password for the `--p12` PKCS#12 archive (use empty string if none).
+    #[arg(long = "p12-pass", requires = "p12")]
+    pub p12_pass: Option<String>,
 }
 
 /// Optional request body for methods that support one.
