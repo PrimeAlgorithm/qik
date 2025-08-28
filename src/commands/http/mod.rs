@@ -97,6 +97,9 @@ pub struct CommonHttpArgs {
 
     /// Sets the maximum number of allowed redirects for a request.
     pub redirects: Option<usize>,
+
+    /// Sets a proxy that the request client will pass requests to.
+    pub proxy: Option<Url>,
 }
 
 /// Optional request body for methods that support one.

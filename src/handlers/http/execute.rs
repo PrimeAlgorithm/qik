@@ -5,13 +5,14 @@
 //! returns both the request and response as structured data.
 
 use crate::{
+    cli,
     commands::http::{CommonHttpArgs, PayloadArgs},
     models::http::{RequestSpec, ResponseData, Transaction},
 };
 use base64::prelude::*;
 use bytes::Bytes;
 use reqwest::{
-    Certificate, Client, Identity, Method, Version,
+    Certificate, Client, Identity, Method, Proxy, Version,
     header::{CONTENT_TYPE, HeaderMap, HeaderValue},
     multipart::{Form, Part},
     redirect::Policy,
@@ -222,6 +223,10 @@ fn build_http_client(
 
     if let Some(redirects) = common.redirects {
         client_builder = client_builder.redirect(Policy::limited(redirects))
+    }
+
+    if let Some(proxy) = &common.proxy {
+        client_builder = client_builder.proxy(Proxy::all(proxy.as_str())?);
     }
 
     for cert in trusted_certs.into_iter() {
