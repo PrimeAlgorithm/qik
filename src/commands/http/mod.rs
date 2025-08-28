@@ -94,6 +94,9 @@ pub struct CommonHttpArgs {
     /// the request will fail with a timeout error.
     #[arg(long, value_parser = parse_duration)]
     pub timeout: Option<std::time::Duration>,
+
+    /// Sets the maximum number of allowed redirects for a request.
+    pub redirects: Option<usize>,
 }
 
 /// Optional request body for methods that support one.

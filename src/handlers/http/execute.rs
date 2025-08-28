@@ -14,6 +14,7 @@ use reqwest::{
     Certificate, Client, Identity, Method, Version,
     header::{CONTENT_TYPE, HeaderMap, HeaderValue},
     multipart::{Form, Part},
+    redirect::Policy,
 };
 use std::{collections::HashMap, fs, io::Read, path::PathBuf};
 
@@ -218,6 +219,10 @@ fn build_http_client(
     client_builder = client_builder
         .danger_accept_invalid_certs(common.insecure)
         .danger_accept_invalid_hostnames(common.no_verify_hostname);
+
+    if let Some(redirects) = common.redirects {
+        client_builder = client_builder.redirect(Policy::limited(redirects))
+    }
 
     for cert in trusted_certs.into_iter() {
         client_builder = client_builder.add_root_certificate(cert);
