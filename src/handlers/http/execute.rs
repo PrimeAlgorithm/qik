@@ -5,7 +5,6 @@
 //! returns both the request and response as structured data.
 
 use crate::{
-    cli,
     commands::http::{CommonHttpArgs, PayloadArgs},
     models::http::{RequestSpec, ResponseData, Transaction},
 };

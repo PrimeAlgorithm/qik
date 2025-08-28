@@ -96,9 +96,11 @@ pub struct CommonHttpArgs {
     pub timeout: Option<std::time::Duration>,
 
     /// Sets the maximum number of allowed redirects for a request.
+    #[arg(long)]
     pub redirects: Option<usize>,
 
     /// Sets a proxy that the request client will pass requests to.
+    #[arg(long)]
     pub proxy: Option<Url>,
 }
 
