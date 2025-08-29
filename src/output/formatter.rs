@@ -10,7 +10,9 @@ use mime::{JSON, Mime, XML};
 use owo_colors::OwoColorize;
 use reqwest::{
     StatusCode,
-    header::{AUTHORIZATION, CONTENT_TYPE, HeaderMap, HeaderName, PROXY_AUTHORIZATION},
+    header::{
+        AUTHORIZATION, CONTENT_TYPE, COOKIE, HeaderMap, HeaderName, PROXY_AUTHORIZATION, SET_COOKIE,
+    },
 };
 
 /// Turn a `(RequestSpec, ResponseData)` into two terminal-friendly strings.
@@ -163,6 +165,8 @@ fn is_sensitive(name: &HeaderName) -> bool {
     name == AUTHORIZATION
         || name == PROXY_AUTHORIZATION
         || name.as_str().eq_ignore_ascii_case("cookie")
+        || name == COOKIE
+        || name == SET_COOKIE
 }
 
 /// Return header block (`\nKey: Value…`) or empty string.
@@ -172,7 +176,7 @@ fn format_headers(headers: &HeaderMap) -> Result<String, anyhow::Error> {
     for (name, value) in headers {
         let key = name.bright_black();
 
-        if name == AUTHORIZATION {
+        if name == AUTHORIZATION || name == PROXY_AUTHORIZATION {
             let s = value.to_str().unwrap_or_default();
             let scheme = s.splitn(2, char::is_whitespace).next().unwrap_or("");
             if scheme.is_empty() {

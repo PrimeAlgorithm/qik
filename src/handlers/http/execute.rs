@@ -12,7 +12,7 @@ use base64::prelude::*;
 use bytes::Bytes;
 use reqwest::{
     Certificate, Client, Identity, Method, Proxy, Version,
-    header::{CONTENT_TYPE, HeaderMap, HeaderValue},
+    header::{CONTENT_TYPE, COOKIE, HeaderMap, HeaderValue},
     multipart::{Form, Part},
     redirect::Policy,
 };
@@ -92,6 +92,24 @@ pub async fn execute(req_info: RequestInformation<'_>) -> Result<Transaction, an
             }
 
             request_headers.append(key, value.clone());
+        }
+    }
+
+    if !request_headers.contains_key(COOKIE) {
+        if let Some(cookies) = &req_info.common.cookie {
+            if !cookies.is_empty() {
+                let mut cookie_str = String::new();
+                for (i, (name, value)) in cookies.iter().enumerate() {
+                    if i > 0 {
+                        cookie_str.push_str("; ");
+                    }
+                    cookie_str.push_str(name);
+                    cookie_str.push('=');
+                    cookie_str.push_str(value);
+                }
+
+                request_headers.append(COOKIE, HeaderValue::from_str(&cookie_str)?);
+            }
         }
     }
 

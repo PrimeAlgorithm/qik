@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use crate::commands::parsers::{
     auth::parse_auth,
     bearer::parse_bearer,
+    cookie::parse_cookie,
     form::{FormData, parse_form},
     header::parse_header,
     json::parse_json,
@@ -102,6 +103,10 @@ pub struct CommonHttpArgs {
     /// Sets a proxy that the request client will pass requests to.
     #[arg(long)]
     pub proxy: Option<Url>,
+
+    /// Adds in memory cookies to the request.
+    #[arg(long, value_parser = parse_cookie)]
+    pub cookie: Option<Vec<(String, String)>>,
 }
 
 /// Optional request body for methods that support one.

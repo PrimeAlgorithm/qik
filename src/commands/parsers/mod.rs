@@ -2,6 +2,7 @@
 
 pub mod auth;
 pub mod bearer;
+pub mod cookie;
 pub mod form;
 pub mod header;
 pub mod json;
