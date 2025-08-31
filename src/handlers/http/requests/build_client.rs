@@ -29,7 +29,11 @@ pub fn build_http_client(
         .danger_accept_invalid_hostnames(common.no_verify_hostname);
 
     if let Some(redirects) = common.redirects {
-        client_builder = client_builder.redirect(Policy::limited(redirects))
+        client_builder = client_builder.redirect(if redirects == 0 {
+            Policy::none()
+        } else {
+            Policy::limited(redirects)
+        });
     }
 
     if let Some(proxy) = &common.proxy {
