@@ -21,7 +21,6 @@ pub struct FormData {
 ///     Each option may appear at most once; unknown keys are an error.
 ///     Quotes around PATH or option values are allowed and are stripped if they match
 /// TODO:
-///     Validate MIME field
 ///     Allow STDIN to function
 pub fn parse_form(form: &str) -> Result<FormData, String> {
     let (mut name, rhs) = form

@@ -19,7 +19,7 @@ pub struct RequestSpec {
     /// Target url.
     pub url: Url,
 
-    /// Request headers..
+    /// Request headers.
     pub headers: HeaderMap,
 
     /// Optional request body.
