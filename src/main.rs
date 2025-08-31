@@ -8,11 +8,10 @@ mod models;
 mod output;
 mod util;
 
-use std::io::stdout;
-
 use crate::{cli::execute_cmd, output::printer::Printer};
 use clap::Parser;
 use cli::Cli;
+use std::io::stdout;
 
 #[tokio::main]
 async fn main() {

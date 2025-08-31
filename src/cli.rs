@@ -2,8 +2,8 @@
 
 use crate::{
     commands::http::HttpCommands,
-    handlers::http::execute_http_command,
-    output::{formatter::format_transaction, printer::Printer},
+    handlers::http::requests::execute::execute_http_command,
+    output::{format::formatter::format_transaction, printer::Printer},
 };
 use clap::{Parser, Subcommand};
 use std::io::Write;

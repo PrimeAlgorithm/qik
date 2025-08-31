@@ -2,5 +2,5 @@
 //!
 //! Contains utilities for formatting and outputting data.
 
-pub mod formatter;
+pub mod format;
 pub mod printer;

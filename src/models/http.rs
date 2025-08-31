@@ -1,11 +1,11 @@
 //! Contains data models used to represent HTTP requests and responses.
 
+use crate::handlers::http::requests::set_payload::Payload;
 use bytes::Bytes;
 use reqwest::{Method, StatusCode, Version, header::HeaderMap};
 use url::Url;
 
 /// A structured representation of an HTTP request.
-#[derive(Debug)]
 pub struct RequestSpec {
     /// HTTP verb.
     pub method: Method,
@@ -23,7 +23,7 @@ pub struct RequestSpec {
     pub headers: HeaderMap,
 
     /// Optional request body.
-    pub body: Option<Bytes>,
+    pub body: Payload,
 }
 
 /// A structured representation of an HTTP response.
