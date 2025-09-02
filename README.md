@@ -1,28 +1,32 @@
 # Qik
 
-Qik is a colorized HTTP CLI built in Rust. 
+Qik is a colorized HTTP CLI built in Rust.
 
 ## Features
+
 Qik supports the following:
 
-* Pretty JSON output (detected via Content-Type)
-* Bodies: raw, JSON, XML, urlencoded and multipart 
-* Query params, headers, cookies; Basic and Bearer auth
-* TLS: custom CA roots and mTLS
-* HTTP version selection
-* Redirect limit, request timeout, and proxy support
-
+- Pretty JSON output (detected via Content-Type)
+- Bodies: raw, JSON, XML, urlencoded and multipart
+- Query params, headers, cookies; Basic and Bearer auth
+- TLS: custom CA roots and mTLS
+- HTTP version selection
+- Redirect limit, request timeout, and proxy support
 
 ## Installation
+
 ### Prerequisites
-- Rust 1.56+ 
+
+- Rust 1.88+
 
 ### Build From Source
+
 1. git clone https://github.com/PrimeAlgorithm/qik
 2. cd qik
 3. cargo build --release
 
 ## Usage
+
 ```bash
 # GET Request
 qik http get https://api.example.com \
@@ -52,6 +56,7 @@ qik http get https://api.example.com --cacert ./company-ca.pem
 ```
 
 ## Example Output
+
 ```bash
 Request:
 GET https://api.example.com HTTP/1.1 (auto-negotiated)
@@ -69,16 +74,19 @@ content-type: application/json
 ```
 
 ## Command Reference
-All verbs can be found under the `http` subcommand. 
+
+All verbs can be found under the `http` subcommand.
 
 ```bash
-qik http <verb> <URL> [flags] 
+qik http <verb> <URL> [flags]
 ```
 
 ### Subcommands
+
 `http` Contains all HTTP verbs.
 
 ### Common flags:
+
 `--header "Key: Value"` (repeatable)
 
 `--param "key=value"` (repeatable)
@@ -105,7 +113,7 @@ qik http <verb> <URL> [flags]
 
 ### Dangerous Flags
 
-`--insecure` Will allow connections to proceed even if the server’s certificate is invalid. 
+`--insecure` Will allow connections to proceed even if the server’s certificate is invalid.
 
 `--no-verify-hostname` Will allow connections to proceed even if the server’s hostname is invalid.
 
@@ -120,14 +128,16 @@ qik http <verb> <URL> [flags]
 `--form key=value` or `--form key=@/path/file[;filename=name]`
 
 # Security Notes
+
 ## Privacy & Redaction
+
 Qik prints request/response details to the terminal. Treat all output as sensitive.
 
 Best-effort redaction is applied to specific headers only:
 
-* `Authorization` and `Proxy-Authorization`: shown as `Scheme <redacted>` (e.g., `Bearer <redacted>`).
+- `Authorization` and `Proxy-Authorization`: shown as `Scheme <redacted>` (e.g., `Bearer <redacted>`).
 
-* `Cookie` and `Set-Cookie`: shown as `<redacted>`.
+- `Cookie` and `Set-Cookie`: shown as `<redacted>`.
 
 Not redacted: request/response bodies (JSON/XML/form), URLs/query params, and any other headers (e.g., X-Api-Key) unless they match the names above.
 
@@ -138,22 +148,23 @@ Qik is provided “AS IS” without warranties under the MIT license.
 If you notice a redaction issue, please open a security-focused issue or contact the maintainer.
 
 ## TLS Verification Bypass (Dangerous)
+
 `--insecure` and `--no-verify-hostname` disable TLS safety checks.
 
 # Project Structure
-* `src/`
 
-    * `commands/` command definitions and parsers for those commands
+- `src/`
 
-    * `handlers/` handlers for commands (currently only request execution)
+  - `commands/` command definitions and parsers for those commands
 
-    * `models/` data models
+  - `handlers/` handlers for commands (currently only request execution)
 
-    * `output/` formatting (pretty printing) and displaying logic
+  - `models/` data models
 
-    * `util`/ small useful helper functions
+  - `output/` formatting (pretty printing) and displaying logic
+
+  - `util`/ small useful helper functions
 
 ## Contributing
 
-Pull requests are welcome. 
-
+Pull requests are welcome.
