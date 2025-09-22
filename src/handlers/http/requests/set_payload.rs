@@ -21,7 +21,13 @@ pub enum Payload {
 }
 
 /// Converts payload arguments into HTTP [`Payload`] format.
-pub async fn set_payload(payload_args: &PayloadArgs) -> Result<Payload, anyhow::Error> {
+pub async fn set_payload(
+    possible_payload_args: &Option<PayloadArgs>,
+) -> Result<Payload, anyhow::Error> {
+    let Some(payload_args) = possible_payload_args else {
+        return Ok(Payload::None);
+    };
+
     if let Some(raw) = &payload_args.raw {
         return Ok(Payload::Body(BodyInfo {
             content: Bytes::from(raw.clone()),

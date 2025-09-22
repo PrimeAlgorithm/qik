@@ -17,8 +17,9 @@ use crate::{
     },
     models::http::{RequestSpec, ResponseData, Transaction},
 };
+use bytes::Bytes;
 use reqwest::{
-    header::{CONTENT_TYPE, HeaderValue},
+    header::{CONTENT_LENGTH, CONTENT_TYPE, HeaderValue},
     multipart::Form,
 };
 
@@ -67,36 +68,38 @@ pub async fn request(req_info: RequestInformation<'_>) -> Result<Transaction, an
     }
 
     let mut request_headers = set_headers(&req_info)?;
-    let mut request_body = Payload::None;
+    let request_body;
     request_headers = set_cookies(&req_info, request_headers)?;
 
-    if let Some(payload_data) = req_info.body {
-        match set_payload(&payload_data).await? {
-            Payload::Body(data) => {
-                request = request.body(data.content.clone());
+    match set_payload(req_info.body).await? {
+        Payload::Body(data) => {
+            request = request.body(data.content.clone());
 
-                if !request_headers.contains_key(CONTENT_TYPE) {
-                    if let Some(content_type) = data.content_type.clone() {
-                        request_headers.append(CONTENT_TYPE, HeaderValue::from_str(&content_type)?);
-                    }
+            if !request_headers.contains_key(CONTENT_TYPE) {
+                if let Some(content_type) = data.content_type.clone() {
+                    request_headers.append(CONTENT_TYPE, HeaderValue::from_str(&content_type)?);
                 }
+            }
 
-                request_body = Payload::Body(BodyInfo {
-                    content: data.content.clone(),
-                    content_type: data.content_type.clone(),
-                });
-            }
-            Payload::Form(params) => {
-                request = request.form(&params);
-                request_body = Payload::Form(params.clone());
-            }
-            Payload::Multipart(form) => {
-                request = request.multipart(form);
-                request_body = Payload::Multipart(Form::new());
-            }
-            Payload::None => request_body = Payload::None,
-        };
-    }
+            request_body = Payload::Body(BodyInfo {
+                content: data.content.clone(),
+                content_type: data.content_type.clone(),
+            });
+        }
+        Payload::Form(params) => {
+            request = request.form(&params);
+            request_body = Payload::Form(params.clone());
+        }
+        Payload::Multipart(form) => {
+            request = request.multipart(form);
+            request_body = Payload::Multipart(Form::new());
+        }
+        Payload::None => {
+            request = request.body(Bytes::from(""));
+            request_headers.append(CONTENT_LENGTH, HeaderValue::from_static("0"));
+            request_body = Payload::None;
+        }
+    };
 
     let auth_info = load_auth(&req_info)?;
     if let Some((header_name, header_value)) = auth_info {
