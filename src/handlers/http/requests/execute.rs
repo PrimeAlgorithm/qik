@@ -6,18 +6,34 @@ use crate::{
     models::http::Transaction,
 };
 use reqwest::Method;
+use std::io::Write;
 
 /// Execute a parsed [`HttpCommands`] using the given HTTP client
-pub async fn execute_http_command(command: &HttpCommands) -> Result<Transaction, anyhow::Error> {
+pub async fn execute_http_command(
+    command: &HttpCommands,
+    response_body_sink: Option<&mut dyn Write>,
+) -> Result<Transaction, anyhow::Error> {
     let result = match command {
-        HttpCommands::Get { common } => execute_helper(Method::GET, common, &None).await,
-        HttpCommands::Post { common, body } => execute_helper(Method::POST, common, body).await,
-        HttpCommands::Put { common, body } => execute_helper(Method::PUT, common, body).await,
-        HttpCommands::Delete { common, body } => execute_helper(Method::DELETE, common, body).await,
-        HttpCommands::Patch { common, body } => execute_helper(Method::PATCH, common, body).await,
-        HttpCommands::Head { common } => execute_helper(Method::HEAD, common, &None).await,
+        HttpCommands::Get { common } => {
+            execute_helper(Method::GET, common, &None, response_body_sink).await
+        }
+        HttpCommands::Post { common, body } => {
+            execute_helper(Method::POST, common, body, response_body_sink).await
+        }
+        HttpCommands::Put { common, body } => {
+            execute_helper(Method::PUT, common, body, response_body_sink).await
+        }
+        HttpCommands::Delete { common, body } => {
+            execute_helper(Method::DELETE, common, body, response_body_sink).await
+        }
+        HttpCommands::Patch { common, body } => {
+            execute_helper(Method::PATCH, common, body, response_body_sink).await
+        }
+        HttpCommands::Head { common } => {
+            execute_helper(Method::HEAD, common, &None, response_body_sink).await
+        }
         HttpCommands::Options { common, body } => {
-            execute_helper(Method::OPTIONS, common, body).await
+            execute_helper(Method::OPTIONS, common, body, response_body_sink).await
         }
     }?;
 
@@ -29,12 +45,16 @@ async fn execute_helper(
     req_method: Method,
     common: &CommonHttpArgs,
     body: &Option<PayloadArgs>,
+    response_body_sink: Option<&mut dyn Write>,
 ) -> Result<Transaction, anyhow::Error> {
-    let transaction = request(RequestInformation {
-        method: req_method,
-        common: common,
-        body: body,
-    })
+    let transaction = request(
+        RequestInformation {
+            method: req_method,
+            common,
+            body,
+        },
+        response_body_sink,
+    )
     .await?;
 
     Ok(transaction)

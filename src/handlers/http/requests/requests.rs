@@ -15,16 +15,23 @@ use crate::{
         set_headers::set_headers,
         set_payload::{BodyInfo, Payload, set_payload},
     },
+    error::{ErrorKind, QikError},
     models::http::{RequestSpec, ResponseData, Transaction},
 };
-use bytes::Bytes;
+use bytes::{Bytes, BytesMut};
 use reqwest::{
-    header::{CONTENT_LENGTH, CONTENT_TYPE, HeaderValue},
+    header::{CONTENT_LENGTH, CONTENT_TYPE, HeaderMap, HeaderName, HeaderValue},
     multipart::Form,
 };
+use std::io::Write;
+
+const DEFAULT_FORMATTED_RESPONSE_LIMIT: usize = 10 * 1024 * 1024;
 
 /// Send the request and return `(RequestSpec, ResponseData)`.
-pub async fn request(req_info: RequestInformation<'_>) -> Result<Transaction, anyhow::Error> {
+pub async fn request(
+    req_info: RequestInformation<'_>,
+    mut response_body_sink: Option<&mut dyn Write>,
+) -> Result<Transaction, anyhow::Error> {
     if req_info.common.insecure || req_info.common.no_verify_hostname {
         use owo_colors::OwoColorize;
         eprintln!(
@@ -38,8 +45,10 @@ pub async fn request(req_info: RequestInformation<'_>) -> Result<Transaction, an
     }
 
     let mut url = req_info.common.url.clone();
-    let certs = setup_ca_certs(&req_info)?;
-    let client_identity = load_client_cert(&req_info);
+    let certs = setup_ca_certs(&req_info)
+        .map_err(|error| QikError::new(ErrorKind::Tls, error))?;
+    let client_identity = load_client_cert(&req_info)
+        .map_err(|error| QikError::new(ErrorKind::Tls, error))?;
 
     // If the user has added params, create a new URL with it.
     if let Some(params) = &req_info.common.param {
@@ -52,7 +61,8 @@ pub async fn request(req_info: RequestInformation<'_>) -> Result<Transaction, an
         req_info.common,
         certs,
         client_identity,
-    )?;
+    )
+    .map_err(|error| QikError::new(ErrorKind::Transport, error))?;
 
     // Setup the request.
     let mut request = client.request(req_info.method.clone(), url.clone());
@@ -106,9 +116,64 @@ pub async fn request(req_info: RequestInformation<'_>) -> Result<Transaction, an
         request_headers.append(header_name, header_value);
     }
 
+    mark_sensitive_headers(&mut request_headers, req_info.common.redact_header.as_deref());
+
     request = request.headers(request_headers.clone());
-    let result = request.send().await?;
+    let mut result = request
+        .send()
+        .await
+        .map_err(|error| {
+            QikError::from_reqwest(
+                error,
+                &format!("failed to send {} request to {url}", req_info.method),
+            )
+        })?;
     let negotiated = result.version();
+    let status = result.status();
+    let mut response_headers = result.headers().clone();
+    mark_sensitive_headers(
+        &mut response_headers,
+        req_info.common.redact_header.as_deref(),
+    );
+
+    let streaming = response_body_sink.is_some();
+    let max_size = req_info.common.max_response_size.unwrap_or(if streaming {
+        0
+    } else {
+        DEFAULT_FORMATTED_RESPONSE_LIMIT
+    });
+    if max_size != 0
+        && result
+            .content_length()
+            .is_some_and(|content_length| content_length > max_size as u64)
+    {
+        return Err(response_too_large(max_size).into());
+    }
+
+    let mut response_body = BytesMut::new();
+    let mut received = 0usize;
+    while let Some(chunk) = result
+        .chunk()
+        .await
+        .map_err(|error| QikError::from_reqwest(error, "failed while reading response body"))?
+    {
+        received = received.saturating_add(chunk.len());
+        if max_size != 0 && received > max_size {
+            return Err(response_too_large(max_size).into());
+        }
+
+        if let Some(sink) = response_body_sink.as_deref_mut() {
+            sink.write_all(&chunk)
+                .map_err(|error| QikError::new(ErrorKind::Output, error))?;
+        } else {
+            response_body.extend_from_slice(&chunk);
+        }
+    }
+
+    if let Some(sink) = response_body_sink.as_deref_mut() {
+        sink.flush()
+            .map_err(|error| QikError::new(ErrorKind::Output, error))?;
+    }
 
     Ok((
         RequestSpec {
@@ -120,10 +185,31 @@ pub async fn request(req_info: RequestInformation<'_>) -> Result<Transaction, an
             body: request_body,
         },
         ResponseData {
-            status: result.status(),
+            status,
             version: negotiated,
-            headers: result.headers().clone(),
-            body: result.bytes().await?,
+            headers: response_headers,
+            body: response_body.freeze(),
         },
     ))
+}
+
+fn response_too_large(max_size: usize) -> QikError {
+    QikError::new(
+        ErrorKind::ResponseTooLarge,
+        anyhow::anyhow!(
+            "response body exceeds the configured limit of {max_size} bytes (use --max-response-size to change it)"
+        ),
+    )
+}
+
+fn mark_sensitive_headers(headers: &mut HeaderMap, extra_sensitive: Option<&[HeaderName]>) {
+    let Some(extra_sensitive) = extra_sensitive else {
+        return;
+    };
+
+    for (name, value) in headers.iter_mut() {
+        if extra_sensitive.iter().any(|sensitive| sensitive == name) {
+            value.set_sensitive(true);
+        }
+    }
 }

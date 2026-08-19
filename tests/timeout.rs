@@ -22,5 +22,5 @@ async fn test_timeout() {
     common::cli()
         .args(["http", "get", &url, "--timeout", "100ms"])
         .assert()
-        .failure();
+        .code(4);
 }

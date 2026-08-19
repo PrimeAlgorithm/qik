@@ -1,4 +1,4 @@
-//! Methods that can be used to detect the given mime type if possbile.
+//! Methods that can be used to detect the given MIME type if possible.
 
 use mime::{JSON, Mime, XML};
 

@@ -17,8 +17,23 @@ impl<W: Write> Printer<W> {
         self.writer.write_all(text.as_bytes())
     }
 
+    /// Flushes buffered output.
+    pub fn flush(&mut self) -> io::Result<()> {
+        self.writer.flush()
+    }
+
     /// Writes text to the writer followed by a new line.
     pub fn println(&mut self, text: &str) -> io::Result<()> {
         writeln!(self.writer, "{text}")
+    }
+}
+
+impl<W: Write> Write for Printer<W> {
+    fn write(&mut self, buffer: &[u8]) -> io::Result<usize> {
+        self.writer.write(buffer)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.writer.flush()
     }
 }

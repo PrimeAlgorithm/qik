@@ -78,7 +78,7 @@ pub fn parse_form(form: &str) -> Result<FormData, String> {
                     }
                     unknown => {
                         return Err(format!(
-                            "Unkown form option '{unknown}' (allowed: filename)"
+                            "Unknown form option '{unknown}' (allowed: filename)"
                         ));
                     }
                 }

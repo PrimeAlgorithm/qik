@@ -1,4 +1,5 @@
 use crate::handlers::http::requests::request_info::RequestInformation;
+use anyhow::Context;
 use reqwest::Certificate;
 use std::{fs, io::Read, path::PathBuf};
 
@@ -15,13 +16,17 @@ pub fn setup_ca_certs(req_info: &RequestInformation) -> Result<Vec<Certificate>,
 
 fn load_ca_certificates(path: &PathBuf) -> Result<Vec<Certificate>, anyhow::Error> {
     let mut data = Vec::new();
-    fs::File::open(&path)?.read_to_end(&mut data)?;
+    fs::File::open(path)
+        .with_context(|| format!("failed to open CA certificate {}", path.display()))?
+        .read_to_end(&mut data)
+        .with_context(|| format!("failed to read CA certificate {}", path.display()))?;
 
     let pem_certs = reqwest::Certificate::from_pem_bundle(&data).ok();
     if let Some(certs) = pem_certs {
         return Ok(certs);
     }
 
-    let der_cert = reqwest::Certificate::from_der(&data)?;
+    let der_cert = reqwest::Certificate::from_der(&data)
+        .with_context(|| format!("invalid PEM or DER CA certificate in {}", path.display()))?;
     Ok(vec![der_cert])
 }

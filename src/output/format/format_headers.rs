@@ -9,6 +9,11 @@ pub fn format_headers(headers: &HeaderMap) -> Result<String, anyhow::Error> {
     for (name, value) in headers {
         let key = name.bright_black();
 
+        if value.is_sensitive() {
+            out.push_str(&format!("\n{key}: <redacted>"));
+            continue;
+        }
+
         if name == AUTHORIZATION || name == PROXY_AUTHORIZATION {
             let s = value.to_str().unwrap_or_default();
             let scheme = s.splitn(2, char::is_whitespace).next().unwrap_or("");

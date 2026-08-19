@@ -16,19 +16,19 @@ use owo_colors::OwoColorize;
 
 /// Turn a `(RequestSpec, ResponseData)` into two terminal-friendly strings.
 pub fn format_transaction(transaction: Transaction) -> Result<(String, String), anyhow::Error> {
-    let request_formatted = format_request(transaction.0)?;
-    let response_formatted = format_response(transaction.1)?;
+    let request_formatted = format_request(&transaction.0)?;
+    let response_formatted = format_response(&transaction.1)?;
 
     Ok((request_formatted, response_formatted))
 }
 
-fn format_request(request: RequestSpec) -> Result<String, anyhow::Error> {
+pub fn format_request(request: &RequestSpec) -> Result<String, anyhow::Error> {
     let mut out = String::new();
 
     let title = "Request:".bold();
     out.push_str(&format!("{title}"));
 
-    let url = request.url;
+    let url = &request.url;
 
     let version_display = match request.version {
         Some(requested) if requested != request.negotiated => {
@@ -47,8 +47,11 @@ fn format_request(request: RequestSpec) -> Result<String, anyhow::Error> {
     ));
 
     let host = url
-        .host()
-        .map(|u| u.to_string())
+        .host_str()
+        .map(|host| match url.port() {
+            Some(port) => format!("{host}:{port}"),
+            None => host.to_owned(),
+        })
         .ok_or_else(|| anyhow!("URL has no host"))?;
     out.push_str(&format!("\n{}: {}", "host".bright_black(), host));
 
@@ -75,7 +78,7 @@ fn format_request(request: RequestSpec) -> Result<String, anyhow::Error> {
     Ok(out)
 }
 
-fn format_response(response: ResponseData) -> Result<String, anyhow::Error> {
+pub fn format_response(response: &ResponseData) -> Result<String, anyhow::Error> {
     let mut out = String::new();
 
     let title = "Response:".bold();

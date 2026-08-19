@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use crate::commands::parsers::{
     auth::parse_auth,
     bearer::parse_bearer,
+    byte_size::parse_byte_size,
     cookie::parse_cookie,
     form::{FormData, parse_form},
     header::parse_header,
@@ -69,22 +70,26 @@ pub struct CommonHttpArgs {
     #[arg(long)]
     pub cacert: Option<Vec<PathBuf>>,
 
-    #[arg(long = "identity-pem", conflicts_with_all = ["cert", "key"])]
+    #[arg(long = "identity-pem", conflicts_with_all = ["cert", "key", "p12"])]
     pub identity_pem: Option<PathBuf>,
 
     /// Client certificate chain in PEM (leaf first, then intermediates).
     /// Use with `--key`.
-    #[arg(long, requires = "key")]
+    #[arg(long, requires = "key", conflicts_with = "p12")]
     pub cert: Option<PathBuf>,
 
     /// Matching client private key in PKCS#8 PEM.
     /// Use with `--cert`.
-    #[arg(long, requires = "cert")]
+    #[arg(long, requires = "cert", conflicts_with = "p12")]
     pub key: Option<PathBuf>,
 
     /// PKCS#12/.pfx containing client key and cert chain.
     /// Use with `--p12-pass`.
-    #[arg(long, requires = "p12_pass")]
+    #[arg(
+        long,
+        requires = "p12_pass",
+        conflicts_with_all = ["identity_pem", "cert", "key"]
+    )]
     pub p12: Option<PathBuf>,
 
     /// Password for the `--p12` PKCS#12 archive (use empty string if none).
@@ -93,8 +98,21 @@ pub struct CommonHttpArgs {
 
     /// If the request takes longer than the specified timeout
     /// the request will fail with a timeout error.
-    #[arg(long, value_parser = parse_duration)]
+    #[arg(long, value_parser = parse_duration, default_value = "30s")]
     pub timeout: Option<std::time::Duration>,
+
+    /// Maximum time allowed to establish a network connection.
+    #[arg(
+        long = "connect-timeout",
+        value_parser = parse_duration,
+        default_value = "10s"
+    )]
+    pub connect_timeout: std::time::Duration,
+
+    /// Maximum response bytes accepted. Formatted output defaults to 10 MiB;
+    /// streamed body output is unlimited unless this option is provided.
+    #[arg(long = "max-response-size", value_parser = parse_byte_size)]
+    pub max_response_size: Option<usize>,
 
     /// Sets the maximum number of allowed redirects for a request.
     #[arg(long)]
@@ -107,6 +125,10 @@ pub struct CommonHttpArgs {
     /// Adds in memory cookies to the request.
     #[arg(long, value_parser = parse_cookie)]
     pub cookie: Option<Vec<(String, String)>>,
+
+    /// Additional response or request header names to redact in displayed output.
+    #[arg(long = "redact-header")]
+    pub redact_header: Option<Vec<HeaderName>>,
 }
 
 /// Optional request body for methods that support one.
@@ -125,7 +147,7 @@ pub struct PayloadArgs {
     #[arg(long, short)]
     pub raw: Option<String>,
 
-    /// Valdiates and sends JSON provided as is. Implies `Content-Type: application/json`
+    /// Validates and sends JSON provided as is. Implies `Content-Type: application/json`
     /// unless content-type is provided via `--header`.
     #[arg(long, short, value_parser = parse_json)]
     pub json: Option<String>,

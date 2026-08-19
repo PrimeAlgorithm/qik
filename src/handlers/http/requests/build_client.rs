@@ -25,6 +25,8 @@ pub fn build_http_client(
     };
 
     client_builder = client_builder
+        .user_agent(concat!("qik/", env!("CARGO_PKG_VERSION")))
+        .connect_timeout(common.connect_timeout)
         .danger_accept_invalid_certs(common.insecure)
         .danger_accept_invalid_hostnames(common.no_verify_hostname);
 
