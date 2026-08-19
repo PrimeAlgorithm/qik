@@ -13,7 +13,7 @@ use crate::commands::parsers::{
     param::parse_param,
     xml::parse_xml,
 };
-use clap::{ArgGroup, Args, Subcommand, command};
+use clap::{ArgGroup, Args, Subcommand};
 use humantime::parse_duration;
 use reqwest::header::{HeaderName, HeaderValue};
 use url::Url;

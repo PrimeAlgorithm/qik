@@ -1,6 +1,6 @@
 mod common;
 
-use predicates::prelude::predicate;
+use predicates::prelude::{PredicateBooleanExt, predicate};
 use wiremock::{
     Mock, MockServer, ResponseTemplate,
     matchers::{method, path},

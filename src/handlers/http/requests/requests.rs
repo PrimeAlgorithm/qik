@@ -178,7 +178,7 @@ pub async fn request(
         RequestSpec {
             method: req_info.method,
             version: requested_http_version,
-            negotiated: negotiated,
+            negotiated,
             url: url.clone(),
             headers: request_headers,
             body: request_body,
