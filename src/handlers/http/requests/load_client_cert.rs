@@ -1,5 +1,5 @@
-use anyhow::{Context, bail};
 use crate::handlers::http::requests::request_info::RequestInformation;
+use anyhow::{Context, bail};
 use reqwest::Identity;
 use std::fs;
 
@@ -38,9 +38,10 @@ pub fn load_client_cert(req_info: &RequestInformation) -> anyhow::Result<Option<
             let der = fs::read(p)
                 .with_context(|| format!("failed to read PKCS#12 identity from {}", p.display()))?;
             let pass = p12_pass.as_deref().unwrap_or("");
-            Ok(Some(Identity::from_pkcs12_der(&der, pass).context(
-                "invalid PKCS#12 identity or password",
-            )?))
+            Ok(Some(
+                Identity::from_pkcs12_der(&der, pass)
+                    .context("invalid PKCS#12 identity or password")?,
+            ))
         }
 
         (None, None, None, None) => Ok(None),

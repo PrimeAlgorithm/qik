@@ -112,9 +112,7 @@ async fn additional_sensitive_headers_can_be_redacted() {
     let mock_server = MockServer::start().await;
     Mock::given(method("GET"))
         .and(path("/secret"))
-        .respond_with(
-            ResponseTemplate::new(200).insert_header("x-api-key", "super-secret"),
-        )
+        .respond_with(ResponseTemplate::new(200).insert_header("x-api-key", "super-secret"))
         .mount(&mock_server)
         .await;
 

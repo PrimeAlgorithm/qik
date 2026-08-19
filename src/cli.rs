@@ -5,9 +5,7 @@ use crate::{
     error::{ErrorKind, QikError},
     handlers::http::requests::execute::execute_http_command,
     output::{
-        format::formatter::{
-            format_request, format_response, format_transaction,
-        },
+        format::formatter::{format_request, format_response, format_transaction},
         printer::Printer,
     },
 };

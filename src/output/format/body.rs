@@ -31,9 +31,8 @@ pub fn format_body_bytes(
             // Servers occasionally label error pages or truncated responses as
             // JSON. Rendering the original body is more useful than failing the
             // entire command in that situation.
-            formatted_payload = Some(
-                pretty_json(bytes_to_str).unwrap_or_else(|_| bytes_to_str.to_owned()),
-            );
+            formatted_payload =
+                Some(pretty_json(bytes_to_str).unwrap_or_else(|_| bytes_to_str.to_owned()));
         } else if is_xml_like(&mime_type) {
             formatted_payload = Some(bytes_to_str.to_string());
         } else {

@@ -5,6 +5,7 @@
 //! returns both the request and response as structured data.
 
 use crate::{
+    error::{ErrorKind, QikError},
     handlers::http::requests::{
         build_client::build_http_client,
         load_auth::load_auth,
@@ -15,7 +16,6 @@ use crate::{
         set_headers::set_headers,
         set_payload::{BodyInfo, Payload, set_payload},
     },
-    error::{ErrorKind, QikError},
     models::http::{RequestSpec, ResponseData, Transaction},
 };
 use bytes::{Bytes, BytesMut};
@@ -45,10 +45,9 @@ pub async fn request(
     }
 
     let mut url = req_info.common.url.clone();
-    let certs = setup_ca_certs(&req_info)
-        .map_err(|error| QikError::new(ErrorKind::Tls, error))?;
-    let client_identity = load_client_cert(&req_info)
-        .map_err(|error| QikError::new(ErrorKind::Tls, error))?;
+    let certs = setup_ca_certs(&req_info).map_err(|error| QikError::new(ErrorKind::Tls, error))?;
+    let client_identity =
+        load_client_cert(&req_info).map_err(|error| QikError::new(ErrorKind::Tls, error))?;
 
     // If the user has added params, create a new URL with it.
     if let Some(params) = &req_info.common.param {
@@ -116,18 +115,18 @@ pub async fn request(
         request_headers.append(header_name, header_value);
     }
 
-    mark_sensitive_headers(&mut request_headers, req_info.common.redact_header.as_deref());
+    mark_sensitive_headers(
+        &mut request_headers,
+        req_info.common.redact_header.as_deref(),
+    );
 
     request = request.headers(request_headers.clone());
-    let mut result = request
-        .send()
-        .await
-        .map_err(|error| {
-            QikError::from_reqwest(
-                error,
-                &format!("failed to send {} request to {url}", req_info.method),
-            )
-        })?;
+    let mut result = request.send().await.map_err(|error| {
+        QikError::from_reqwest(
+            error,
+            &format!("failed to send {} request to {url}", req_info.method),
+        )
+    })?;
     let negotiated = result.version();
     let status = result.status();
     let mut response_headers = result.headers().clone();
